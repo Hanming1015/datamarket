@@ -1,0 +1,370 @@
+import { useState } from 'react';
+import { Shield, Plus, X, Eye, Calendar, Users, Target, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { mockDataSets, mockConsentRules, mockAccessRequests } from '../data/mockData';
+import { DataSet, ConsentRule } from '../types';
+
+export default function ConsentManagement() {
+  const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [formData, setFormData] = useState({
+    allowedRoles: [] as string[],
+    allowedPurposes: [] as string[],
+    allowedFields: [] as string[],
+    validUntil: ''
+  });
+
+  const roles = ['Research Institution', 'University', 'Pharmaceutical Company', 'Healthcare Provider'];
+  const purposes = ['Medical Research', 'Clinical Trials', 'Drug Development', 'Sleep Research', 'Genetic Research'];
+
+  const getConsentRules = (datasetId: string) => {
+    return mockConsentRules.filter(rule => rule.datasetId === datasetId);
+  };
+
+  const getAccessHistory = (datasetId: string) => {
+    return mockAccessRequests.filter(req => req.datasetId === datasetId);
+  };
+
+  const dataset = mockDataSets.find(ds => ds.id === selectedDataset);
+
+  const toggleArrayItem = (array: string[], item: string, setter: (arr: string[]) => void) => {
+    if (array.includes(item)) {
+      setter(array.filter(i => i !== item));
+    } else {
+      setter([...array, item]);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Consent Management</h1>
+          <p className="text-gray-600 mt-1">Control who can access your data and for what purpose</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
+            <p className="text-sm text-emerald-700 font-medium">{mockDataSets.length} Active Datasets</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 space-y-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">My Datasets</h2>
+            <div className="space-y-2">
+              {mockDataSets.map(dataset => {
+                const rules = getConsentRules(dataset.id);
+                const activeRules = rules.filter(r => r.status === 'active').length;
+
+                return (
+                  <button
+                    key={dataset.id}
+                    onClick={() => setSelectedDataset(dataset.id)}
+                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                      selectedDataset === dataset.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm">{dataset.name}</h3>
+                        <p className="text-xs text-gray-600 mt-1">{dataset.recordCount.toLocaleString()} records</p>
+                      </div>
+                      {activeRules > 0 && (
+                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
+                          {activeRules} active
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 space-y-4">
+          {selectedDataset && dataset ? (
+            <>
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">{dataset.name}</h2>
+                    <p className="text-blue-100 mt-2">{dataset.description}</p>
+                    <div className="flex gap-4 mt-4">
+                      <div className="bg-white/20 backdrop-blur-sm px-3 py-2 rounded-lg">
+                        <p className="text-xs text-blue-100">Records</p>
+                        <p className="text-lg font-bold">{dataset.recordCount.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-white/20 backdrop-blur-sm px-3 py-2 rounded-lg">
+                        <p className="text-xs text-blue-100">Fields</p>
+                        <p className="text-lg font-bold">{dataset.fields.length}</p>
+                      </div>
+                      <div className="bg-white/20 backdrop-blur-sm px-3 py-2 rounded-lg">
+                        <p className="text-xs text-blue-100">Category</p>
+                        <p className="text-lg font-bold capitalize">{dataset.category}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-blue-600" />
+                    Consent Rules
+                  </h3>
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Rule
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {getConsentRules(selectedDataset).map(rule => (
+                    <div key={rule.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 space-y-3">
+                          <div className="flex items-center gap-2">
+                            {rule.status === 'active' ? (
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            ) : rule.status === 'revoked' ? (
+                              <XCircle className="w-5 h-5 text-red-500" />
+                            ) : (
+                              <Clock className="w-5 h-5 text-gray-400" />
+                            )}
+                            <span className={`text-sm font-semibold ${
+                              rule.status === 'active' ? 'text-green-700' :
+                              rule.status === 'revoked' ? 'text-red-700' :
+                              'text-gray-500'
+                            }`}>
+                              {rule.status.toUpperCase()}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mb-1">
+                                <Users className="w-3 h-3" />
+                                Allowed Roles
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {rule.allowedRoles.map(role => (
+                                  <span key={role} className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                                    {role}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mb-1">
+                                <Target className="w-3 h-3" />
+                                Allowed Purposes
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {rule.allowedPurposes.map(purpose => (
+                                  <span key={purpose} className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded">
+                                    {purpose}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mb-1">
+                                <FileText className="w-3 h-3" />
+                                Allowed Fields
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {rule.allowedFields.map(field => (
+                                  <span key={field} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+                                    {field}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mb-1">
+                                <Calendar className="w-3 h-3" />
+                                Valid Period
+                              </p>
+                              <p className="text-xs text-gray-700">
+                                {new Date(rule.validFrom).toLocaleDateString()} - {new Date(rule.validUntil).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {rule.status === 'active' && (
+                          <button className="ml-4 px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            Revoke
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {getConsentRules(selectedDataset).length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Shield className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                      <p>No consent rules defined yet</p>
+                      <p className="text-sm">Create your first rule to start sharing data securely</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                  <Eye className="w-5 h-5 text-blue-600" />
+                  Access History
+                </h3>
+                <div className="space-y-2">
+                  {getAccessHistory(selectedDataset).map(request => (
+                    <div key={request.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{request.requesterName}</p>
+                        <p className="text-xs text-gray-600">Purpose: {request.purpose}</p>
+                        <p className="text-xs text-gray-500 mt-1">{new Date(request.requestedAt).toLocaleString()}</p>
+                      </div>
+                      <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                        request.status === 'approved' ? 'bg-green-100 text-green-700' :
+                        request.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                        request.status === 'partial' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {request.status}
+                      </span>
+                    </div>
+                  ))}
+
+                  {getAccessHistory(selectedDataset).length === 0 && (
+                    <div className="text-center py-6 text-gray-500">
+                      <p className="text-sm">No access requests yet</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+              <Shield className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Dataset</h3>
+              <p className="text-gray-600">Choose a dataset from the list to manage consent rules</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showCreateModal && dataset && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">Create Consent Rule</h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Allowed Roles</label>
+                <div className="space-y-2">
+                  {roles.map(role => (
+                    <label key={role} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.allowedRoles.includes(role)}
+                        onChange={() => toggleArrayItem(
+                          formData.allowedRoles,
+                          role,
+                          (arr) => setFormData({ ...formData, allowedRoles: arr })
+                        )}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <span className="text-sm text-gray-700">{role}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Allowed Purposes</label>
+                <div className="space-y-2">
+                  {purposes.map(purpose => (
+                    <label key={purpose} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.allowedPurposes.includes(purpose)}
+                        onChange={() => toggleArrayItem(
+                          formData.allowedPurposes,
+                          purpose,
+                          (arr) => setFormData({ ...formData, allowedPurposes: arr })
+                        )}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <span className="text-sm text-gray-700">{purpose}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Allowed Fields</label>
+                <div className="space-y-2">
+                  {dataset.fields.map(field => (
+                    <label key={field} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.allowedFields.includes(field)}
+                        onChange={() => toggleArrayItem(
+                          formData.allowedFields,
+                          field,
+                          (arr) => setFormData({ ...formData, allowedFields: arr })
+                        )}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <span className="text-sm text-gray-700 font-mono">{field}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Valid Until</label>
+                <input
+                  type="date"
+                  value={formData.validUntil}
+                  onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Create Rule
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
