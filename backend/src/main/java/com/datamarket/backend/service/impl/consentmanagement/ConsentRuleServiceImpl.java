@@ -1,6 +1,7 @@
 package com.datamarket.backend.service.impl.consentmanagement;
 
 import com.datamarket.backend.mapper.ConsentRuleMapper;
+import com.datamarket.backend.pojo.AuditLog;
 import com.datamarket.backend.pojo.ConsentRule;
 import com.datamarket.backend.service.auditlog.AuditLogService;
 import com.datamarket.backend.service.auditlog.ConsentRuleService;
@@ -20,8 +21,8 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
     @Autowired
     private ConsentRuleMapper consentRuleMapper;
 
-//    @Autowired
-//    private AuditLogService auditLogService;
+    @Autowired
+    private AuditLogService auditLogService;
 
     @Override
     @Transactional
@@ -51,6 +52,9 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
 
         consentRuleMapper.insert(consentRule);
 
+        //Silently record an audit log.
+        auditLogService.addAuditLog("owner1", "consent_created", consentRule.getDatasetId(), "Created consent for roles: " + String.join(",", consentRule.getAllowedRoles()));
+
         return consentRule;
     }
 
@@ -67,6 +71,9 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
         consentRule.setRevokedAt(LocalDateTime.now());
 
         consentRuleMapper.updateById(consentRule);
+
+        //Silently record an audit log.
+        auditLogService.addAuditLog("owner1", "consent_revoked", consentRule.getDatasetId(), "Revoked consent for roles: " + String.join(",", consentRule.getAllowedRoles()));
     }
 
     @Override

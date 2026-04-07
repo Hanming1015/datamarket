@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Search, Database, FileText, Send, X, CheckCircle2, AlertCircle, Clock, Filter } from 'lucide-react';
 import { mockDataSets, mockAccessRequests } from '../data/mockData';
 import { DataSet } from '../types';
+import axios from 'axios';
+import { Toast } from '../components/Toast';
 
 export default function DataMarket() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,6 +15,7 @@ export default function DataMarket() {
     requestedFields: [] as string[],
     duration: '6'
   });
+  const [toast, setToast] = useState<{show: boolean, message: string, type: 'success' | 'error' | 'warning' | 'info'}>({ show: false, message: '', type: 'info' });
 
   const categories = ['all', 'health', 'fitness', 'genomic', 'lifestyle'];
   const purposes = ['Medical Research', 'Clinical Trials', 'Drug Development', 'Sleep Research', 'Genetic Research', 'AI Model Training'];
@@ -26,13 +29,52 @@ export default function DataMarket() {
 
   const myRequests = mockAccessRequests.slice(0, 5);
 
-  const handleRequestAccess = () => {
-    setShowRequestModal(false);
-    setRequestForm({ purpose: '', requestedFields: [], duration: '6' });
+  const handleRequestAccess = async () => {
+    if (!selectedDataset) return;
+    
+    try {
+      const payload = {
+        requesterId: "req1",
+        requesterName: "Stanford Medical Research",
+        consumerType: "Research Institution",
+        datasetId: selectedDataset.id,
+        purpose: requestForm.purpose,
+        requestedFields: requestForm.requestedFields
+      };
+
+      const response = await axios.post("http://localhost:8080/api/access/request", payload);
+      
+      console.log("Server Response:", response.data);
+      
+      if (response.data.status === "rejected") {
+        const errorReason = response.data.decision?.reasons?.[Object.keys(response.data.decision.reasons)[0]] || "Insufficient permissions";
+        setToast({ show: true, message: `Access Request Rejected\nReason: ${errorReason}`, type: 'error' });
+      } else {
+        setToast({ 
+          show: true, 
+          message: `Request Successful (${response.data.status})!\nTotal Cost: $${response.data.pricing?.totalCost}`, 
+          type: 'success' 
+        });
+      }
+
+      setShowRequestModal(false);
+      setRequestForm({ purpose: '', requestedFields: [], duration: '6' });
+      
+    } catch (error) {
+      console.error("Request failed", error);
+      setToast({ show: true, message: "Submission failed. Please check if the server is running.", type: 'error' });
+    }
   };
 
   return (
     <div className="space-y-6">
+      {toast.show && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast({ ...toast, show: false })} 
+        />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Data Market</h1>

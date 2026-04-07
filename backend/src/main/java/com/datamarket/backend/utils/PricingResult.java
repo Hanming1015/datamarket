@@ -1,0 +1,24 @@
+package com.datamarket.backend.utils;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PricingResult {
+    private BigDecimal baseCost;
+
+    private BigDecimal fieldCost;
+
+    private BigDecimal sensitiveFieldCost;
+
+    private BigDecimal purposeMultiplier;
+
+    private BigDecimal bulkDiscount;
+
+    private BigDecimal totalCost;
+}

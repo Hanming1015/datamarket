@@ -28,6 +28,8 @@ public class AuditLog {
 
     private String action;
 
+    private String datasetId;
+
     private String datasetName;
 
     private String details;

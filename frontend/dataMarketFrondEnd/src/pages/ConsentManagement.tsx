@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Shield, Plus, X, Eye, Calendar, Users, Target, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { mockDataSets, mockAccessRequests } from '../data/mockData';
 import { DataSet, ConsentRule } from '../types';
+import { Toast } from '../components/Toast';
 
 export default function ConsentManagement() {
   const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
@@ -14,6 +15,7 @@ export default function ConsentManagement() {
     allowedFields: [] as string[],
     validUntil: ''
   });
+  const [toast, setToast] = useState<{show: boolean, message: string, type: 'success' | 'error' | 'warning' | 'info'}>({ show: false, message: '', type: 'info' });
 
   const roles = ['Research Institution', 'University', 'Pharmaceutical Company', 'Healthcare Provider'];
   const purposes = ['Medical Research', 'Clinical Trials', 'Drug Development', 'Sleep Research', 'Genetic Research'];
@@ -21,17 +23,12 @@ export default function ConsentManagement() {
   const fetchConsents = async () => {
     try {
       const response = await axios.get('http://localhost:8080/api/consents');
-      
-      // 打印后端传过来的原始数据，按 F12 在 Console 里查看
-      console.log('📌 Raw Backend Data:', response.data);
-      
-      // 容错处理：确保后端返回的 null 或 JSON 字符串能被正确转换为数组
+        
       const normalizedData = response.data.map((rule: any) => {
         const safeParse = (value: any) => {
           if (Array.isArray(value)) return value;
           if (typeof value === 'string') {
             try { 
-              // 处理 MyBatis 存的嵌套转义 JSON 字符串（比如 "[\"Research Institution\"]"）
               const parsed = JSON.parse(value); 
               if (Array.isArray(parsed)) return parsed;
               if (typeof parsed === 'string' && parsed.startsWith('[')) return JSON.parse(parsed);
@@ -40,7 +37,7 @@ export default function ConsentManagement() {
               return [value]; 
             }
           }
-          return []; // 处理 null 的情况
+          return [];
         };
 
         return {
@@ -96,21 +93,20 @@ export default function ConsentManagement() {
     try {
       const response = await axios.post('http://localhost:8080/api/consents', ruleData);
       console.log('Rule created successfully:', response.data);
-      alert('Consent rule created successfully!');
+      setToast({ show: true, message: 'Consent rule created successfully!', type: 'success' });
       setShowCreateModal(false);
-      // Reset form
+
       setFormData({
         allowedRoles: [],
         allowedPurposes: [],
         allowedFields: [],
         validUntil: ''
       });
-      // 手动将后端返回的规则追加到前端状态里（因为不用 GET 重新拉列表）
-      // 但为了防止一刷新就没，我们改回每次重新查库
+
       fetchConsents();
     } catch (error) {
       console.error('❌ Error creating consent rule:', error);
-      alert('Failed to create consent rule. Please check console.');
+      setToast({ show: true, message: 'Failed to create consent rule. Please check console.', type: 'error' });
     }
   };
 
@@ -121,16 +117,23 @@ export default function ConsentManagement() {
 
     try {
       await axios.put(`http://localhost:8080/api/consents/${ruleId}/revoke`);
-      alert('Consent rule revoked successfully!');
+      setToast({ show: true, message: 'Consent rule revoked successfully!', type: 'success' });
       fetchConsents();
     } catch (error) {
       console.error('❌ Error revoking consent rule:', error);
-      alert('Failed to revoke consent rule. Please check console.');
+      setToast({ show: true, message: 'Failed to revoke consent rule. Please check console.', type: 'error' });
     }
   };
 
   return (
     <div className="space-y-6">
+      {toast.show && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast({ ...toast, show: false })} 
+        />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Consent Management</h1>

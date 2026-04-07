@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface AuditLogService {
     List<AuditLog> getAuditLogs(String action, String userId, String datasetId, String from, String to);
+
+    AuditLog addAuditLog(String userId, String action, String datasetId, String details);
 }

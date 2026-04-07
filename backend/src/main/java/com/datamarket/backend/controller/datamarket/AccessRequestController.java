@@ -1,0 +1,25 @@
+package com.datamarket.backend.controller.datamarket;
+
+import com.datamarket.backend.dto.DataAccessRequest;
+import com.datamarket.backend.service.datamarket.AccessRequestService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/access")
+public class AccessRequestController {
+
+    @Autowired
+    private AccessRequestService accessRequestService;
+
+    @PostMapping("/request")
+    public ResponseEntity<?> requestAccess(@RequestBody DataAccessRequest request) {
+
+        Map<String, Object> response = accessRequestService.processAccessRequest(request);
+
+        return ResponseEntity.ok(response);
+    }
+}

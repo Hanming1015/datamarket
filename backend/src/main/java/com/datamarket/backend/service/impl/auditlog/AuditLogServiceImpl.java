@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class AuditLogServiceImpl implements AuditLogService {
@@ -32,4 +33,26 @@ public class AuditLogServiceImpl implements AuditLogService {
 
         return auditLogMapper.selectList(queryWrapper);
     }
+
+    @Override
+    public AuditLog addAuditLog(String userId, String action, String datasetId, String details) {
+        AuditLog auditLog = new AuditLog();
+
+        auditLog.setId(UUID.randomUUID().toString());
+        auditLog.setTimestamp(java.time.LocalDateTime.now());
+        auditLog.setUserId(userId);
+        auditLog.setUserName("System/Owner");
+        auditLog.setAction(action);
+        auditLog.setDatasetId(datasetId);
+        auditLog.setDatasetName("Dataset-" + datasetId);
+        auditLog.setDetails(details);
+
+        //System.out.println("AuditLog: " + auditLog);
+
+        auditLogMapper.insert(auditLog);
+
+        return auditLog;
+    }
+
+
 }
