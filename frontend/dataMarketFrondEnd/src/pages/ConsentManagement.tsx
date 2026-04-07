@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Shield, Plus, X, Eye, Calendar, Users, Target, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { mockDataSets, mockConsentRules, mockAccessRequests } from '../data/mockData';
+import { mockDataSets, mockAccessRequests } from '../data/mockData';
 import { DataSet, ConsentRule } from '../types';
 
 export default function ConsentManagement() {
   const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [consentRules, setConsentRules] = useState<ConsentRule[]>([]);
   const [formData, setFormData] = useState({
     allowedRoles: [] as string[],
     allowedPurposes: [] as string[],
@@ -17,8 +18,51 @@ export default function ConsentManagement() {
   const roles = ['Research Institution', 'University', 'Pharmaceutical Company', 'Healthcare Provider'];
   const purposes = ['Medical Research', 'Clinical Trials', 'Drug Development', 'Sleep Research', 'Genetic Research'];
 
+  const fetchConsents = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/consents');
+      
+      // 打印后端传过来的原始数据，按 F12 在 Console 里查看
+      console.log('📌 Raw Backend Data:', response.data);
+      
+      // 容错处理：确保后端返回的 null 或 JSON 字符串能被正确转换为数组
+      const normalizedData = response.data.map((rule: any) => {
+        const safeParse = (value: any) => {
+          if (Array.isArray(value)) return value;
+          if (typeof value === 'string') {
+            try { 
+              // 处理 MyBatis 存的嵌套转义 JSON 字符串（比如 "[\"Research Institution\"]"）
+              const parsed = JSON.parse(value); 
+              if (Array.isArray(parsed)) return parsed;
+              if (typeof parsed === 'string' && parsed.startsWith('[')) return JSON.parse(parsed);
+              return [parsed];
+            } catch { 
+              return [value]; 
+            }
+          }
+          return []; // 处理 null 的情况
+        };
+
+        return {
+          ...rule,
+          allowedRoles: safeParse(rule.allowedRoles),
+          allowedPurposes: safeParse(rule.allowedPurposes),
+          allowedFields: safeParse(rule.allowedFields)
+        };
+      });
+
+      setConsentRules(normalizedData);
+    } catch (error) {
+      console.error('❌ Error fetching consent rules:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchConsents();
+  }, []);
+
   const getConsentRules = (datasetId: string) => {
-    return mockConsentRules.filter(rule => rule.datasetId === datasetId);
+    return consentRules.filter(rule => rule.datasetId === datasetId);
   };
 
   const getAccessHistory = (datasetId: string) => {
@@ -37,14 +81,10 @@ export default function ConsentManagement() {
 
   const handleCreateRule = async () => {
     if (!selectedDataset) return;
-    
-    // Convert selectedDataset to numeric id if backend expects Long (assuming 'ds-1' -> 1)
-    // For now, let's just pass it, but if selectedDataset is 'ds-1' like mock data, we might need basic cleanup.
-    const numericDatasetId = selectedDataset.replace(/\D/g, '') || '1';
 
     const ruleData = {
-      ownerId: 1, // Mocked logged-in user ID
-      datasetId: parseInt(numericDatasetId, 10),
+      ownerId: 'owner1', // Keep as string for backend user_id reference if needed, though POJO might expect String
+      datasetId: selectedDataset, // e.g., 'ds1', 'ds2' exactly as backend datasets table uses
       allowedRoles: formData.allowedRoles,
       allowedPurposes: formData.allowedPurposes,
       allowedFields: formData.allowedFields,
@@ -55,7 +95,7 @@ export default function ConsentManagement() {
 
     try {
       const response = await axios.post('http://localhost:8080/api/consents', ruleData);
-      console.log('✅ Rule created successfully:', response.data);
+      console.log('Rule created successfully:', response.data);
       alert('Consent rule created successfully!');
       setShowCreateModal(false);
       // Reset form
@@ -65,10 +105,27 @@ export default function ConsentManagement() {
         allowedFields: [],
         validUntil: ''
       });
-      // Optionally re-fetch list here if we added GET endpoint
+      // 手动将后端返回的规则追加到前端状态里（因为不用 GET 重新拉列表）
+      // 但为了防止一刷新就没，我们改回每次重新查库
+      fetchConsents();
     } catch (error) {
       console.error('❌ Error creating consent rule:', error);
       alert('Failed to create consent rule. Please check console.');
+    }
+  };
+
+  const handleRevokeRule = async (ruleId: string) => {
+    if (!window.confirm('Are you sure you want to revoke this consent rule? This action will block future access requests relying on this rule immediately.')) {
+      return;
+    }
+
+    try {
+      await axios.put(`http://localhost:8080/api/consents/${ruleId}/revoke`);
+      alert('Consent rule revoked successfully!');
+      fetchConsents();
+    } catch (error) {
+      console.error('❌ Error revoking consent rule:', error);
+      alert('Failed to revoke consent rule. Please check console.');
     }
   };
 
@@ -193,9 +250,9 @@ export default function ConsentManagement() {
                                 Allowed Roles
                               </p>
                               <div className="flex flex-wrap gap-1">
-                                {rule.allowedRoles.map(role => (
-                                  <span key={role} className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
-                                    {role}
+                                {(rule.allowedRoles || []).filter(Boolean).map((role, idx) => (
+                                  <span key={`role-${idx}`} className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                                    {String(role).replace(/["[\]\\]/g, '')}
                                   </span>
                                 ))}
                               </div>
@@ -207,9 +264,9 @@ export default function ConsentManagement() {
                                 Allowed Purposes
                               </p>
                               <div className="flex flex-wrap gap-1">
-                                {rule.allowedPurposes.map(purpose => (
-                                  <span key={purpose} className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded">
-                                    {purpose}
+                                {(rule.allowedPurposes || []).filter(Boolean).map((purpose, idx) => (
+                                  <span key={`purpose-${idx}`} className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded">
+                                    {String(purpose).replace(/["[\]\\]/g, '')}
                                   </span>
                                 ))}
                               </div>
@@ -221,9 +278,9 @@ export default function ConsentManagement() {
                                 Allowed Fields
                               </p>
                               <div className="flex flex-wrap gap-1">
-                                {rule.allowedFields.map(field => (
-                                  <span key={field} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
-                                    {field}
+                                {(rule.allowedFields || []).filter(Boolean).map((field, idx) => (
+                                  <span key={`field-${idx}`} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+                                    {String(field).replace(/["[\]\\]/g, '')}
                                   </span>
                                 ))}
                               </div>
@@ -242,7 +299,10 @@ export default function ConsentManagement() {
                         </div>
 
                         {rule.status === 'active' && (
-                          <button className="ml-4 px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                          <button 
+                            onClick={() => handleRevokeRule(rule.id)}
+                            className="ml-4 px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          >
                             Revoke
                           </button>
                         )}

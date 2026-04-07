@@ -4,21 +4,31 @@ import com.datamarket.backend.pojo.ConsentRule;
 import com.datamarket.backend.service.auditlog.ConsentRuleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @RestController
+@RequestMapping("/api/consents")
 public class ConsentRuleController {
 
     @Autowired
     private ConsentRuleService consentRuleService;
 
-    @PostMapping("/api/consents")
-    public ResponseEntity<?> createConsent (@RequestBody Map<String, Object> body) {
-        ConsentRule consentRule = consentRuleService.createConsent(body);
+    @PostMapping
+    public ResponseEntity<?> createConsentRule (@RequestBody Map<String, Object> body) {
+        ConsentRule consentRule = consentRuleService.createConsentRule(body);
         return ResponseEntity.ok(consentRule);
+    }
+
+    @PutMapping("/{id}/revoke")
+    public ResponseEntity<?> revokeConsentRule (@PathVariable String id) {
+        consentRuleService.revokeConsentRule(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getConsentRules() {
+        return ResponseEntity.ok(consentRuleService.getConsentRules());
     }
 }

@@ -25,7 +25,8 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
 
     @Override
     @Transactional
-    public ConsentRule createConsent(Map<String, Object> body) {
+    public ConsentRule createConsentRule(Map<String, Object> body) {
+        //System.out.println("Body: " + body);
 
         ConsentRule consentRule = new ConsentRule();
 
@@ -48,8 +49,29 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
         consentRule.setStatus("active");
         consentRule.setCreatedAt(LocalDateTime.now());
 
-        System.out.println("consentRule:" + consentRule);
+        consentRuleMapper.insert(consentRule);
 
         return consentRule;
     }
+
+    @Override
+    public void revokeConsentRule(String id) {
+        ConsentRule consentRule = consentRuleMapper.selectById(id);
+
+        if (consentRule == null) {
+            throw new RuntimeException("No such consent rule！ID: " + id);
+        }
+
+        consentRule.setStatus("revoked");
+
+        consentRule.setRevokedAt(LocalDateTime.now());
+
+        consentRuleMapper.updateById(consentRule);
+    }
+
+    @Override
+    public List<ConsentRule> getConsentRules() {
+        return consentRuleMapper.selectList(null);
+    }
+
 }

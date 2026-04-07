@@ -17,7 +17,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("consent_rules")
+@TableName(value = "consent_rules", autoResultMap = true)
 public class ConsentRule {
     @TableId(type = IdType.AUTO)
     private String id;
