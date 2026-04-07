@@ -19,7 +19,7 @@ public class AuditLog {
     @TableId(type = IdType.AUTO)
     private String id;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT")
     private LocalDateTime timestamp;
 
     private String userId;

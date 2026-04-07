@@ -1,12 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { FileCheck, Shield, Database, Send, CheckCircle, XCircle, Filter, Calendar, User } from 'lucide-react';
-import { mockAuditLogs } from '../data/mockData';
-import { AuditLog as AuditLogType } from '../types';
+import { type AuditLog } from '../types';
 
 export default function AuditLog() {
   const [selectedAction, setSelectedAction] = useState<string>('all');
   const [searchUser, setSearchUser] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [selectedAction, searchUser]);
+
+  const fetchLogs = async () => {
+    setIsLoading(true);
+    try {
+      const params: Record<string, string> = {};
+      if (selectedAction !== 'all') {
+        params.action = selectedAction;
+      }
+      if (searchUser.trim() !== '') {
+        params.userId = searchUser;
+      }
+
+      const response = await axios.get('http://localhost:8080/api/audit/logs', { params });
+      setLogs(response.data);
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const actionTypes = [
     { value: 'all', label: 'All Actions' },
@@ -60,10 +86,7 @@ export default function AuditLog() {
     return action.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  const filteredLogs = mockAuditLogs.filter(log => {
-    const matchesAction = selectedAction === 'all' || log.action === selectedAction;
-    const matchesUser = searchUser === '' || log.userName.toLowerCase().includes(searchUser.toLowerCase());
-
+  const filteredLogs = logs.filter(log => {
     let matchesDate = true;
     if (dateFilter !== 'all') {
       const logDate = new Date(log.timestamp);
@@ -75,12 +98,12 @@ export default function AuditLog() {
       else if (dateFilter === 'month') matchesDate = daysDiff <= 30;
     }
 
-    return matchesAction && matchesUser && matchesDate;
+    return matchesDate;
   });
 
   const actionStats = actionTypes.slice(1).map(type => ({
     ...type,
-    count: mockAuditLogs.filter(log => log.action === type.value).length
+    count: logs.filter(log => log.action === type.value).length
   }));
 
   return (

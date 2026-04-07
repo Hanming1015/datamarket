@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { Shield, Plus, X, Eye, Calendar, Users, Target, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { mockDataSets, mockConsentRules, mockAccessRequests } from '../data/mockData';
 import { DataSet, ConsentRule } from '../types';
@@ -31,6 +32,43 @@ export default function ConsentManagement() {
       setter(array.filter(i => i !== item));
     } else {
       setter([...array, item]);
+    }
+  };
+
+  const handleCreateRule = async () => {
+    if (!selectedDataset) return;
+    
+    // Convert selectedDataset to numeric id if backend expects Long (assuming 'ds-1' -> 1)
+    // For now, let's just pass it, but if selectedDataset is 'ds-1' like mock data, we might need basic cleanup.
+    const numericDatasetId = selectedDataset.replace(/\D/g, '') || '1';
+
+    const ruleData = {
+      ownerId: 1, // Mocked logged-in user ID
+      datasetId: parseInt(numericDatasetId, 10),
+      allowedRoles: formData.allowedRoles,
+      allowedPurposes: formData.allowedPurposes,
+      allowedFields: formData.allowedFields,
+      validFrom: new Date().toISOString().split('T')[0],
+      validUntil: formData.validUntil ? formData.validUntil : '2099-12-31',
+      status: 'active'
+    };
+
+    try {
+      const response = await axios.post('http://localhost:8080/api/consents', ruleData);
+      console.log('✅ Rule created successfully:', response.data);
+      alert('Consent rule created successfully!');
+      setShowCreateModal(false);
+      // Reset form
+      setFormData({
+        allowedRoles: [],
+        allowedPurposes: [],
+        allowedFields: [],
+        validUntil: ''
+      });
+      // Optionally re-fetch list here if we added GET endpoint
+    } catch (error) {
+      console.error('❌ Error creating consent rule:', error);
+      alert('Failed to create consent rule. Please check console.');
     }
   };
 
@@ -356,7 +394,9 @@ export default function ConsentManagement() {
                   Cancel
                 </button>
                 <button
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={handleCreateRule}
+                  disabled={formData.allowedRoles.length === 0 || formData.allowedPurposes.length === 0}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                   Create Rule
                 </button>
