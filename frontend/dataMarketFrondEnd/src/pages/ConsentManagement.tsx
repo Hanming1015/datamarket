@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Shield, Plus, X, Eye, Calendar, Users, Target, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { mockDataSets, mockAccessRequests } from '../data/mockData';
 import { DataSet, ConsentRule } from '../types';
 import { Toast } from '../components/Toast';
 
@@ -9,6 +8,8 @@ export default function ConsentManagement() {
   const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [consentRules, setConsentRules] = useState<ConsentRule[]>([]);
+  const [datasets, setDatasets] = useState<DataSet[]>([]);
+  const [accessHistory, setAccessHistory] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     allowedRoles: [] as string[],
     allowedPurposes: [] as string[],
@@ -62,11 +63,41 @@ export default function ConsentManagement() {
     return consentRules.filter(rule => rule.datasetId === datasetId);
   };
 
-  const getAccessHistory = (datasetId: string) => {
-    return mockAccessRequests.filter(req => req.datasetId === datasetId);
+  const fetchDatasets = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/datasets', {
+        params: { ownerId: 'owner1' } // Fetch owner's datasets
+      });
+
+      setDatasets(response.data);
+    } catch (error) {
+      console.error('Error fetching datasets:', error);
+    }
   };
 
-  const dataset = mockDataSets.find(ds => ds.id === selectedDataset);
+  useEffect(() => {
+    fetchDatasets();
+  }, []);
+
+  useEffect(() => {
+    if (selectedDataset) {
+      const fetchAccessHistory = async () => {
+        try {
+          const response = await axios.get('http://localhost:8080/api/access/requests', {
+            params: { datasetId: selectedDataset }
+          });
+          setAccessHistory(response.data);
+        } catch (error) {
+          console.error('Error fetching access history:', error);
+        }
+      };
+      fetchAccessHistory();
+    } else {
+      setAccessHistory([]);
+    }
+  }, [selectedDataset]);
+
+  const dataset = datasets.find(ds => ds.id === selectedDataset);
 
   const toggleArrayItem = (array: string[], item: string, setter: (arr: string[]) => void) => {
     if (array.includes(item)) {
@@ -141,7 +172,7 @@ export default function ConsentManagement() {
         </div>
         <div className="flex items-center gap-2">
           <div className="bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
-            <p className="text-sm text-emerald-700 font-medium">{mockDataSets.length} Active Datasets</p>
+            <p className="text-sm text-emerald-700 font-medium">{datasets.length} Active Datasets</p>
           </div>
         </div>
       </div>
@@ -151,7 +182,7 @@ export default function ConsentManagement() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">My Datasets</h2>
             <div className="space-y-2">
-              {mockDataSets.map(dataset => {
+              {datasets.map(dataset => {
                 const rules = getConsentRules(dataset.id);
                 const activeRules = rules.filter(r => r.status === 'active').length;
 
@@ -329,7 +360,7 @@ export default function ConsentManagement() {
                   Access History
                 </h3>
                 <div className="space-y-2">
-                  {getAccessHistory(selectedDataset).map(request => (
+                  {accessHistory.map(request => (
                     <div key={request.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
                       <div>
                         <p className="font-medium text-gray-900 text-sm">{request.requesterName}</p>
@@ -347,7 +378,7 @@ export default function ConsentManagement() {
                     </div>
                   ))}
 
-                  {getAccessHistory(selectedDataset).length === 0 && (
+                  {accessHistory.length === 0 && (
                     <div className="text-center py-6 text-gray-500">
                       <p className="text-sm">No access requests yet</p>
                     </div>

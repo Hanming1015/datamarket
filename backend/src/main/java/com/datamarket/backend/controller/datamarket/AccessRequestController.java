@@ -17,9 +17,14 @@ public class AccessRequestController {
 
     @PostMapping("/request")
     public ResponseEntity<?> requestAccess(@RequestBody DataAccessRequest request) {
-
         Map<String, Object> response = accessRequestService.processAccessRequest(request);
-
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/requests")
+    public ResponseEntity<?> getAccessRequests(
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String datasetId) {
+        return ResponseEntity.ok(accessRequestService.getAccessRequests(userId, datasetId));
     }
 }

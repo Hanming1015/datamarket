@@ -1,10 +1,11 @@
 package com.datamarket.backend.service.impl.consentmanagement;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import org.springframework.util.StringUtils;
 import com.datamarket.backend.mapper.ConsentRuleMapper;
-import com.datamarket.backend.pojo.AuditLog;
 import com.datamarket.backend.pojo.ConsentRule;
 import com.datamarket.backend.service.auditlog.AuditLogService;
-import com.datamarket.backend.service.auditlog.ConsentRuleService;
+import com.datamarket.backend.service.consentmanagement.ConsentRuleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,8 +78,19 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
     }
 
     @Override
-    public List<ConsentRule> getConsentRules() {
-        return consentRuleMapper.selectList(null);
+    public List<ConsentRule> getConsentRules(String datasetId, String status) {
+        QueryWrapper<ConsentRule> queryWrapper = new QueryWrapper<>();
+        queryWrapper.orderByDesc("created_at");
+
+        if (StringUtils.hasText(datasetId)) {
+            queryWrapper.eq("dataset_id", datasetId);
+        }
+
+        if (StringUtils.hasText(status)) {
+            queryWrapper.eq("status", status);
+        }
+
+        return consentRuleMapper.selectList(queryWrapper);
     }
 
 }

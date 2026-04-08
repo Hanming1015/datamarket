@@ -9,6 +9,8 @@ import com.datamarket.backend.pojo.AccessRequest;
 import com.datamarket.backend.service.auditlog.AuditLogService;
 import com.datamarket.backend.service.datamarket.AccessRequestService;
 import com.datamarket.backend.utils.MatchResult;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import org.springframework.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -37,6 +40,22 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
     @Autowired
     private AuditLogService auditLogService;
+
+    @Override
+    public List<AccessRequest> getAccessRequests(String userId, String datasetId) {
+        QueryWrapper<AccessRequest> queryWrapper = new QueryWrapper<>();
+        queryWrapper.orderByDesc("requested_at");
+
+        if (StringUtils.hasText(userId)) {
+            queryWrapper.eq("requester_id", userId);
+        }
+
+        if (StringUtils.hasText(datasetId)) {
+            queryWrapper.eq("dataset_id", datasetId);
+        }
+
+        return accessRequestMapper.selectList(queryWrapper);
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)  // 读写多张表，必须开启事务

@@ -1,7 +1,7 @@
 package com.datamarket.backend.controller.consentmanagement;
 
 import com.datamarket.backend.pojo.ConsentRule;
-import com.datamarket.backend.service.auditlog.ConsentRuleService;
+import com.datamarket.backend.service.consentmanagement.ConsentRuleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +28,10 @@ public class ConsentRuleController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getConsentRules() {
-        return ResponseEntity.ok(consentRuleService.getConsentRules());
+    public ResponseEntity<?> getConsentRules(
+            @RequestParam(required = false) String datasetId,
+            @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(consentRuleService.getConsentRules(datasetId, status));
     }
+
 }

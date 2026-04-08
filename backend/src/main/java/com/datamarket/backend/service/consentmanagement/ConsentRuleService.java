@@ -1,4 +1,4 @@
-package com.datamarket.backend.service.auditlog;
+package com.datamarket.backend.service.consentmanagement;
 
 import com.datamarket.backend.pojo.ConsentRule;
 
@@ -10,5 +10,5 @@ public interface ConsentRuleService {
 
     void revokeConsentRule(String id);
 
-    List<ConsentRule> getConsentRules();
+    List<ConsentRule> getConsentRules(String datasetId, String status);
 }

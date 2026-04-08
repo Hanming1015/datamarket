@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Database, FileText, Send, X, CheckCircle2, AlertCircle, Clock, Filter } from 'lucide-react';
-import { mockDataSets, mockAccessRequests } from '../data/mockData';
 import { DataSet } from '../types';
 import axios from 'axios';
 import { Toast } from '../components/Toast';
@@ -8,6 +7,7 @@ import { Toast } from '../components/Toast';
 export default function DataMarket() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [datasets, setDatasets] = useState<DataSet[]>([]);
   const [selectedDataset, setSelectedDataset] = useState<DataSet | null>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestForm, setRequestForm] = useState({
@@ -20,14 +20,41 @@ export default function DataMarket() {
   const categories = ['all', 'health', 'fitness', 'genomic', 'lifestyle'];
   const purposes = ['Medical Research', 'Clinical Trials', 'Drug Development', 'Sleep Research', 'Genetic Research', 'AI Model Training'];
 
-  const filteredDatasets = mockDataSets.filter(ds => {
-    const matchesSearch = ds.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          ds.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || ds.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  useEffect(() => {
+    const fetchDatasets = async () => {
+      try {
+        const params: any = {};
+        if (selectedCategory !== 'all') params.category = selectedCategory;
+        if (searchQuery) params.keyword = searchQuery;
+        
+        const response = await axios.get('http://localhost:8080/api/datasets', { params });
+        setDatasets(response.data);
+      } catch (error) {
+        console.error("Failed to fetch datasets", error);
+      }
+    };
 
-  const myRequests = mockAccessRequests.slice(0, 5);
+    const fetchMyRequests = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/access/requests', {
+          params: { userId: 'req1' }
+        });
+        setMyRequests(response.data.slice(0, 5));
+      } catch (error) {
+        console.error("Failed to fetch my requests", error);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      fetchDatasets();
+      fetchMyRequests();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedCategory]);
+
+  const filteredDatasets = datasets; // Already filtered by the backend
+
+  const [myRequests, setMyRequests] = useState<any[]>([]);
 
   const handleRequestAccess = async () => {
     if (!selectedDataset) return;
@@ -206,26 +233,25 @@ export default function DataMarket() {
                   </div>
                 </div>
               ))}
+              {myRequests.length === 0 && (
+                <div className="text-center py-4 text-gray-500 text-sm">No requests found</div>
+              )}
             </div>
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
               <h4 className="text-sm font-semibold text-blue-900 mb-2">Quick Stats</h4>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-blue-700">Total Requests:</span>
-                  <span className="font-semibold text-blue-900">{myRequests.length}</span>
+                <div className="flex justify-between text-gray-600">
+                  <span>Total Requests:</span>
+                  <span className="font-semibold text-gray-900">{myRequests.length}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-blue-700">Approved:</span>
-                  <span className="font-semibold text-green-700">
-                    {myRequests.filter(r => r.status === 'approved').length}
-                  </span>
+                <div className="flex justify-between text-green-700">
+                  <span>Approved:</span>
+                  <span className="font-semibold">{myRequests.filter(r => r.status === 'approved' || r.status === 'partial').length}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-blue-700">Pending:</span>
-                  <span className="font-semibold text-yellow-700">
-                    {myRequests.filter(r => r.status === 'pending').length}
-                  </span>
+                <div className="flex justify-between text-yellow-700">
+                  <span>Pending:</span>
+                  <span className="font-semibold">{myRequests.filter(r => r.status === 'pending').length}</span>
                 </div>
               </div>
             </div>
