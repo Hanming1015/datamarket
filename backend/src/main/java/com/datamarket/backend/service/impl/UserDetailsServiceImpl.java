@@ -24,6 +24,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (user == null) {
             throw new RuntimeException("user not found");
         }
-        return null;
+        return new com.datamarket.backend.service.impl.utils.UserDetailsImpl(user);
     }
 }

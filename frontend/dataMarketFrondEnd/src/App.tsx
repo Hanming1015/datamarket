@@ -1,15 +1,61 @@
-import { useState } from 'react';
-import { Shield, ShoppingCart, FileCheck, DollarSign, Menu, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Shield, ShoppingCart, FileCheck, DollarSign, Menu, X, LogOut } from 'lucide-react';
 import ConsentManagement from './pages/ConsentManagement';
 import DataMarket from './pages/DataMarket';
 import AuditLog from './pages/AuditLog';
 import Billing from './pages/Billing';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 type Page = 'consent' | 'market' | 'audit' | 'billing';
+type AuthPage = 'login' | 'register';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [authPage, setAuthPage] = useState<AuthPage>('login');
   const [currentPage, setCurrentPage] = useState<Page>('consent');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    if (token && userData) {
+      setIsAuthenticated(true);
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
+  const handleLoginSuccess = (token: string, userData: any) => {
+    setIsAuthenticated(true);
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setIsAuthenticated(false);
+    setUser(null);
+  };
+
+  const handleRegisterSuccess = () => {
+    setAuthPage('login');
+  };
+
+  if (!isAuthenticated) {
+    return authPage === 'login' ? (
+      <Login
+        onLoginSuccess={handleLoginSuccess}
+        onSwitchToRegister={() => setAuthPage('register')}
+      />
+    ) : (
+      <Register
+        onRegisterSuccess={handleRegisterSuccess}
+        onSwitchToLogin={() => setAuthPage('login')}
+      />
+    );
+  }
 
   const navigation = [
     { id: 'consent' as Page, name: 'Consent Management', icon: Shield, description: 'Data Owner View' },
@@ -72,13 +118,25 @@ function App() {
               })}
             </div>
 
-            <div className="md:hidden flex items-center">
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex items-center gap-2 text-sm">
+                <span className="text-gray-700">Welcome, <span className="font-semibold">{user?.name || user?.username}</span></span>
+              </div>
               <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm font-medium">Logout</span>
               </button>
+              <div className="md:hidden flex items-center">
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                >
+                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -38,11 +38,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> {})
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 放行当前项目的登录和注册接口
-                        .requestMatchers("/api/user/account/login", "/api/user/account/register").permitAll()
+                        // 放行当前项目的用户账号接口
+                        .requestMatchers("/api/user/account/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS).permitAll()
                         .anyRequest().authenticated());
 

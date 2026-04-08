@@ -47,7 +47,7 @@ public class JwtUtil {
     }
 
     public static SecretKey generalKey() {
-        byte[] encodeKey = Base64.getDecoder().decode(JwtUtil.JWT_KEY);
+        byte[] encodeKey = JwtUtil.JWT_KEY.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         return new SecretKeySpec(encodeKey, 0, encodeKey.length, "HmacSHA256");
     }
 
