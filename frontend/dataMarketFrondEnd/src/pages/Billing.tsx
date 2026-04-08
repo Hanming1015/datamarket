@@ -1,42 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, Database, FileText, Download, Calendar } from 'lucide-react';
-import { mockBillingRecords, mockDataSets } from '../data/mockData';
+import axios from 'axios';
+import { UsageStats, BillingRecord } from '../types';
 
 export default function Billing() {
   const [viewMode, setViewMode] = useState<'consumer' | 'owner'>('consumer');
   const [timeRange, setTimeRange] = useState('30');
+  
+  const [stats, setStats] = useState<UsageStats>({
+    totalQueries: 0,
+    totalRecordsAccessed: 0,
+    totalCost: 0,
+    totalRevenue: 0,
+    monthlyTrend: []
+  });
+  const [records, setRecords] = useState<BillingRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const consumerStats = {
-    totalQueries: mockBillingRecords.reduce((sum, record) => sum + record.queryCount, 0),
-    totalRecords: mockBillingRecords.reduce((sum, record) => sum + record.recordsAccessed, 0),
-    totalCost: mockBillingRecords.reduce((sum, record) => sum + record.cost, 0),
-    avgCostPerQuery: mockBillingRecords.reduce((sum, record) => sum + record.cost, 0) /
-                     mockBillingRecords.reduce((sum, record) => sum + record.queryCount, 0)
+  const fetchBillingData = async () => {
+    setLoading(true);
+    try {
+      // Use mock user logic similar to other pages
+      const userId = viewMode === 'consumer' ? 'req1' : 'owner1';
+      const response = await axios.get(`http://localhost:8080/api/billing/summary?userId=${userId}&role=${viewMode}`);
+      
+      if (response.data) {
+        setStats({
+          ...response.data.stats,
+          monthlyTrend: [
+            { month: 'Jan', value: 0 },
+            { month: 'Feb', value: 0 },
+            { month: 'Mar', value: viewMode === 'consumer' ? response.data.stats.totalCost : response.data.stats.totalRevenue }
+          ]
+        });
+        setRecords(response.data.records || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch billing data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const ownerStats = {
-    totalDatasets: mockDataSets.length,
-    totalRecordsShared: 18932,
-    totalRevenue: 1281.15,
-    avgRevenuePerDataset: 1281.15 / mockDataSets.length
-  };
+  useEffect(() => {
+    fetchBillingData();
+  }, [viewMode]);
 
-  const monthlyTrend = [
-    { month: 'Jan', consumer: 245, owner: 180 },
-    { month: 'Feb', consumer: 312, owner: 245 },
-    { month: 'Mar', consumer: 489, owner: 356 },
-    { month: 'Apr', consumer: 567, owner: 412 },
-    { month: 'May', consumer: 634, owner: 489 },
-    { month: 'Jun', consumer: 721, owner: 567 }
-  ];
-
-  const topDatasets = [
-    { name: 'Cardiovascular Health Records', queries: 83, revenue: 622.50, records: 12450 },
-    { name: 'Diabetes Management Records', queries: 62, revenue: 449.50, records: 8990 },
-    { name: 'Sleep Pattern Analysis', queries: 47, revenue: 209.15, records: 4183 }
-  ];
-
-  const maxTrendValue = Math.max(...monthlyTrend.map(m => viewMode === 'consumer' ? m.consumer : m.owner));
+  const maxTrendValue = Math.max(...stats.monthlyTrend.map(m => m.value), 1);
 
   return (
     <div className="space-y-6">
@@ -79,7 +89,7 @@ export default function Billing() {
                 <p className="text-blue-100 text-sm font-medium">Total Spend</p>
                 <DollarSign className="w-5 h-5 text-blue-200" />
               </div>
-              <p className="text-3xl font-bold mb-1">${consumerStats.totalCost.toFixed(2)}</p>
+              <p className="text-3xl font-bold mb-1">${stats.totalCost.toFixed(2)}</p>
               <p className="text-blue-100 text-xs">Last 30 days</p>
             </div>
 
@@ -88,7 +98,7 @@ export default function Billing() {
                 <p className="text-gray-600 text-sm font-medium">Total Queries</p>
                 <Database className="w-5 h-5 text-gray-400" />
               </div>
-              <p className="text-3xl font-bold text-gray-900 mb-1">{consumerStats.totalQueries}</p>
+              <p className="text-3xl font-bold text-gray-900 mb-1">{stats.totalQueries}</p>
               <p className="text-green-600 text-xs flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" />
                 +12% from last month
@@ -100,7 +110,7 @@ export default function Billing() {
                 <p className="text-gray-600 text-sm font-medium">Records Accessed</p>
                 <FileText className="w-5 h-5 text-gray-400" />
               </div>
-              <p className="text-3xl font-bold text-gray-900 mb-1">{consumerStats.totalRecords.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-gray-900 mb-1">{stats.totalRecordsAccessed.toLocaleString()}</p>
               <p className="text-green-600 text-xs flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" />
                 +18% from last month
@@ -112,7 +122,7 @@ export default function Billing() {
                 <p className="text-gray-600 text-sm font-medium">Avg Cost/Query</p>
                 <DollarSign className="w-5 h-5 text-gray-400" />
               </div>
-              <p className="text-3xl font-bold text-gray-900 mb-1">${consumerStats.avgCostPerQuery.toFixed(2)}</p>
+              <p className="text-3xl font-bold text-gray-900 mb-1">${stats.totalQueries > 0 ? (stats.totalCost / stats.totalQueries).toFixed(2) : '0.00'}</p>
               <p className="text-gray-500 text-xs">Per query average</p>
             </div>
           </div>
@@ -133,16 +143,16 @@ export default function Billing() {
               </div>
 
               <div className="space-y-4">
-                {monthlyTrend.map((data, index) => (
+                {stats.monthlyTrend.map((data, index) => (
                   <div key={data.month} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 font-medium w-12">{data.month}</span>
-                      <span className="text-gray-900 font-semibold">${data.consumer}</span>
+                      <span className="text-gray-900 font-semibold">${data.value.toFixed(2)}</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
                       <div
                         className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-500"
-                        style={{ width: `${(data.consumer / maxTrendValue) * 100}%` }}
+                        style={{ width: `${(data.value / maxTrendValue) * 100}%` }}
                       />
                     </div>
                   </div>
@@ -195,21 +205,29 @@ export default function Billing() {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockBillingRecords.map(record => (
-                    <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-sm text-gray-900">
-                        {new Date(record.date).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-900">{record.datasetName}</td>
-                      <td className="py-3 px-4 text-sm text-gray-900 text-right">{record.queryCount}</td>
-                      <td className="py-3 px-4 text-sm text-gray-900 text-right">
-                        {record.recordsAccessed.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-sm font-semibold text-gray-900 text-right">
-                        ${record.cost.toFixed(2)}
+                  {records.length > 0 ? (
+                    records.map(record => (
+                      <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4 text-sm text-gray-900">
+                          {record.date ? new Date(record.date).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-900">{record.datasetName || 'Unknown'}</td>
+                        <td className="py-3 px-4 text-sm text-gray-900 text-right">{record.queryCount || 0}</td>
+                        <td className="py-3 px-4 text-sm text-gray-900 text-right">
+                          {(record.recordsAccessed || 0).toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-sm font-semibold text-gray-900 text-right">
+                          ${(record.cost || 0).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-sm text-gray-500">
+                        No transactions found
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -223,16 +241,18 @@ export default function Billing() {
                 <p className="text-green-100 text-sm font-medium">Total Revenue</p>
                 <DollarSign className="w-5 h-5 text-green-200" />
               </div>
-              <p className="text-3xl font-bold mb-1">${ownerStats.totalRevenue.toFixed(2)}</p>
+              <p className="text-3xl font-bold mb-1">${stats.totalRevenue.toFixed(2)}</p>
               <p className="text-green-100 text-xs">Last 30 days</p>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-gray-600 text-sm font-medium">Active Datasets</p>
+                <p className="text-gray-600 text-sm font-medium">Active Datasets Managed</p>
                 <Database className="w-5 h-5 text-gray-400" />
               </div>
-              <p className="text-3xl font-bold text-gray-900 mb-1">{ownerStats.totalDatasets}</p>
+              <p className="text-3xl font-bold text-gray-900 mb-1">{
+                new Set(records.map(r => r.datasetId)).size
+              }</p>
               <p className="text-green-600 text-xs flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" />
                 +2 this month
@@ -244,7 +264,7 @@ export default function Billing() {
                 <p className="text-gray-600 text-sm font-medium">Records Shared</p>
                 <FileText className="w-5 h-5 text-gray-400" />
               </div>
-              <p className="text-3xl font-bold text-gray-900 mb-1">{ownerStats.totalRecordsShared.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-gray-900 mb-1">{stats.totalRecordsAccessed.toLocaleString()}</p>
               <p className="text-green-600 text-xs flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" />
                 +24% from last month
@@ -256,7 +276,11 @@ export default function Billing() {
                 <p className="text-gray-600 text-sm font-medium">Avg Revenue/Dataset</p>
                 <DollarSign className="w-5 h-5 text-gray-400" />
               </div>
-              <p className="text-3xl font-bold text-gray-900 mb-1">${ownerStats.avgRevenuePerDataset.toFixed(2)}</p>
+              <p className="text-3xl font-bold text-gray-900 mb-1">
+                ${new Set(records.map(r => r.datasetId)).size > 0 
+                  ? (stats.totalRevenue / new Set(records.map(r => r.datasetId)).size).toFixed(2) 
+                  : '0.00'}
+              </p>
               <p className="text-gray-500 text-xs">Per dataset average</p>
             </div>
           </div>
@@ -277,16 +301,16 @@ export default function Billing() {
               </div>
 
               <div className="space-y-4">
-                {monthlyTrend.map((data, index) => (
+                {stats.monthlyTrend.map((data, index) => (
                   <div key={data.month} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 font-medium w-12">{data.month}</span>
-                      <span className="text-gray-900 font-semibold">${data.owner}</span>
+                      <span className="text-gray-900 font-semibold">${data.value.toFixed(2)}</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
                       <div
                         className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500"
-                        style={{ width: `${(data.owner / maxTrendValue) * 100}%` }}
+                        style={{ width: `${maxTrendValue > 0 ? (data.value / maxTrendValue) * 100 : 0}%` }}
                       />
                     </div>
                   </div>
@@ -299,8 +323,8 @@ export default function Billing() {
               <div className="space-y-4">
                 <div className="p-4 bg-green-50 rounded-lg border border-green-100">
                   <p className="text-xs text-green-700 mb-1">Next Payout</p>
-                  <p className="text-2xl font-bold text-green-900 mb-1">$1,281.15</p>
-                  <p className="text-xs text-green-700">Scheduled for March 31, 2024</p>
+                  <p className="text-2xl font-bold text-green-900 mb-1">${stats.totalRevenue.toFixed(2)}</p>
+                  <p className="text-xs text-green-700">Scheduled for {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString()}</p>
                 </div>
 
                 <div className="pt-4 border-t border-gray-200">
@@ -324,8 +348,24 @@ export default function Billing() {
               <h3 className="text-lg font-semibold text-gray-900">Top Performing Datasets</h3>
             </div>
             <div className="space-y-4">
-              {topDatasets.map((dataset, index) => (
-                <div key={dataset.name} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              {records.reduce((acc: any[], current) => {
+                const existing = acc.find(item => item.datasetId === current.datasetId);
+                if (existing) {
+                  existing.queries += current.queryCount;
+                  existing.revenue += current.cost;
+                  existing.records += current.recordsAccessed;
+                } else {
+                  acc.push({
+                    name: current.datasetName || 'Unknown',
+                    datasetId: current.datasetId,
+                    queries: current.queryCount || 0,
+                    revenue: current.cost || 0,
+                    records: current.recordsAccessed || 0,
+                  });
+                }
+                return acc;
+              }, []).sort((a, b) => b.revenue - a.revenue).slice(0, 3).map((dataset, index) => (
+                <div key={dataset.datasetId} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
@@ -346,11 +386,14 @@ export default function Billing() {
                     </div>
                     <div>
                       <p className="text-gray-600 text-xs mb-1">Avg per Query</p>
-                      <p className="font-semibold text-gray-900">${(dataset.revenue / dataset.queries).toFixed(2)}</p>
+                      <p className="font-semibold text-gray-900">${dataset.queries > 0 ? (dataset.revenue / dataset.queries).toFixed(2) : '0.00'}</p>
                     </div>
                   </div>
                 </div>
               ))}
+              {records.length === 0 && (
+                <div className="text-center py-4 text-gray-500 text-sm">No dataset data available</div>
+              )}
             </div>
           </div>
         </>
