@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.datamarket.backend.dto.DataAccessRequest;
 import com.datamarket.backend.mapper.ConsentRuleMapper;
 import com.datamarket.backend.pojo.ConsentRule;
-import com.datamarket.backend.utils.MatchResult;
+import com.datamarket.backend.dto.MatchResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

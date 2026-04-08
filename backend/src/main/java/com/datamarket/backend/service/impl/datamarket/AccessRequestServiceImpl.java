@@ -1,14 +1,14 @@
 package com.datamarket.backend.service.impl.datamarket;
 
 import com.datamarket.backend.dto.DataAccessRequest;
-import com.datamarket.backend.utils.PricingResult;
+import com.datamarket.backend.dto.PricingResult;
 import com.datamarket.backend.engine.ConsentMatchingEngine;
 import com.datamarket.backend.engine.PricingEngine;
 import com.datamarket.backend.mapper.AccessRequestMapper;
 import com.datamarket.backend.pojo.AccessRequest;
 import com.datamarket.backend.service.auditlog.AuditLogService;
 import com.datamarket.backend.service.datamarket.AccessRequestService;
-import com.datamarket.backend.utils.MatchResult;
+import com.datamarket.backend.dto.MatchResult;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

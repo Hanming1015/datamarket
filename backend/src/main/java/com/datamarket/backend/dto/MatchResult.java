@@ -1,4 +1,4 @@
-package com.datamarket.backend.utils;
+package com.datamarket.backend.dto;
 
 import lombok.Data;
 

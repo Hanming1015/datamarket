@@ -1,6 +1,6 @@
 package com.datamarket.backend.engine;
 
-import com.datamarket.backend.utils.PricingResult;
+import com.datamarket.backend.dto.PricingResult;
 import com.datamarket.backend.mapper.PricingConfigMapper;
 import com.datamarket.backend.pojo.PricingConfig;
 import org.springframework.beans.factory.annotation.Autowired;
