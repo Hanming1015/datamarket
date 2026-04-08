@@ -6,6 +6,7 @@ import AuditLog from './pages/AuditLog';
 import Billing from './pages/Billing';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import { authApi } from './services/api';
 
 type Page = 'consent' | 'market' | 'audit' | 'billing';
 type AuthPage = 'login' | 'register';
@@ -19,22 +20,31 @@ function App() {
 
   useEffect(() => {
     // Check if user is already logged in
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    if (token && userData) {
-      setIsAuthenticated(true);
-      setUser(JSON.parse(userData));
-    }
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await authApi.getInfo();
+          console.log('🟢 [Token Verified] Fetched user info from backend:', response.data);
+          setUser(response.data);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error('🔴 [Token Invalid] Failed to fetch user info:', error);
+          handleLogout();
+        }
+      }
+    };
+    checkAuth();
   }, []);
 
   const handleLoginSuccess = (token: string, userData: any) => {
+    console.log('🟢 [Login Success] User data received:', userData);
     setIsAuthenticated(true);
     setUser(userData);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
     setIsAuthenticated(false);
     setUser(null);
   };
@@ -67,15 +77,15 @@ function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'consent':
-        return <ConsentManagement />;
+        return <ConsentManagement user={user} />;
       case 'market':
-        return <DataMarket />;
+        return <DataMarket user={user} />;
       case 'audit':
-        return <AuditLog />;
+        return <AuditLog user={user} />;
       case 'billing':
-        return <Billing />;
+        return <Billing user={user} />;
       default:
-        return <ConsentManagement />;
+        return <ConsentManagement user={user} />;
     }
   };
 

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Search, Database, FileText, Send, X, CheckCircle2, AlertCircle, Clock, Filter } from 'lucide-react';
 import { DataSet } from '../types';
-import axios from 'axios';
+import api from '../services/api';
 import { Toast } from '../components/Toast';
 
-export default function DataMarket() {
+export default function DataMarket({ user }: { user: any }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [datasets, setDatasets] = useState<DataSet[]>([]);
@@ -27,7 +27,7 @@ export default function DataMarket() {
         if (selectedCategory !== 'all') params.category = selectedCategory;
         if (searchQuery) params.keyword = searchQuery;
         
-        const response = await axios.get('http://localhost:8080/api/datasets', { params });
+        const response = await api.get('/api/datasets', { params });
         setDatasets(response.data);
       } catch (error) {
         console.error("Failed to fetch datasets", error);
@@ -36,8 +36,8 @@ export default function DataMarket() {
 
     const fetchMyRequests = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/access/requests', {
-          params: { userId: 'req1' }
+        const response = await api.get('/api/access/requests', {
+          params: { userId: user?.id }
         });
         setMyRequests(response.data.slice(0, 5));
       } catch (error) {
@@ -61,15 +61,15 @@ export default function DataMarket() {
     
     try {
       const payload = {
-        requesterId: "req1",
-        requesterName: "Stanford Medical Research",
-        consumerType: "Research Institution",
+        requesterId: user?.id,
+        requesterName: user?.name,
+        consumerType: user?.organization || "Research Institution",
         datasetId: selectedDataset.id,
         purpose: requestForm.purpose,
         requestedFields: requestForm.requestedFields
       };
 
-      const response = await axios.post("http://localhost:8080/api/access/request", payload);
+      const response = await api.post("/api/access/request", payload);
       
       console.log("Server Response:", response.data);
       

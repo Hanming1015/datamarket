@@ -1,6 +1,7 @@
 package com.datamarket.backend.controller.user.account;
 
 import com.datamarket.backend.pojo.User;
+import com.datamarket.backend.service.user.account.InfoService;
 import com.datamarket.backend.service.user.account.LoginService;
 import com.datamarket.backend.service.user.account.RegisterService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,9 @@ public class UserAccountController {
 
     @Autowired
     private RegisterService registerService;
+
+    @Autowired
+    private InfoService infoService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
@@ -37,5 +41,10 @@ public class UserAccountController {
 
         User user = registerService.register(username, password, name, email, organization, role);
         return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/info")
+    public ResponseEntity<?> getInfo() {
+        return ResponseEntity.ok(infoService.getInfo());
     }
 }

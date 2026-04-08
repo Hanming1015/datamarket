@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { FileCheck, Shield, Database, Send, CheckCircle, XCircle, Filter, Calendar, User } from 'lucide-react';
 import { type AuditLog } from '../types';
 
-export default function AuditLog() {
+export default function AuditLog({ user }: { user: any }) {
   const [selectedAction, setSelectedAction] = useState<string>('all');
   const [searchUser, setSearchUser] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
@@ -25,7 +25,7 @@ export default function AuditLog() {
         params.userId = searchUser;
       }
 
-      const response = await axios.get('http://localhost:8080/api/audit/logs', { params });
+      const response = await api.get('/api/audit/logs', { params });
       setLogs(response.data);
     } catch (error) {
       console.error('Error fetching logs:', error);

@@ -23,7 +23,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -36,6 +35,8 @@ export const authApi = {
 
   register: (username: string, password: string, name: string, email: string, organization: string, role: string) =>
     api.post('/api/user/account/register', { username, password, name, email, organization, role }),
+
+  getInfo: () => api.get('/api/user/account/info'),
 };
 
 export default api;

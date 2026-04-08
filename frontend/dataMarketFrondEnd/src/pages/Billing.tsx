@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, Database, FileText, Download, Calendar } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { UsageStats, BillingRecord } from '../types';
 
-export default function Billing() {
-  const [viewMode, setViewMode] = useState<'consumer' | 'owner'>('consumer');
+export default function Billing({ user }: { user: any }) {
+  const [viewMode, setViewMode] = useState<'consumer' | 'owner'>(user?.role || 'consumer');
   const [timeRange, setTimeRange] = useState('30');
   
   const [stats, setStats] = useState<UsageStats>({
@@ -20,9 +20,7 @@ export default function Billing() {
   const fetchBillingData = async () => {
     setLoading(true);
     try {
-      // Use mock user logic similar to other pages
-      const userId = viewMode === 'consumer' ? 'req1' : 'owner1';
-      const response = await axios.get(`http://localhost:8080/api/billing/summary?userId=${userId}&role=${viewMode}`);
+      const response = await api.get(`/api/billing/summary?userId=${user?.id}&role=${viewMode}`);
       
       if (response.data) {
         setStats({

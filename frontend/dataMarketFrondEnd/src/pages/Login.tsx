@@ -29,7 +29,6 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }: LoginProps
       const { token, user } = response.data;
 
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
 
       setToast({ show: true, message: 'Login successful!', type: 'success' });
       setTimeout(() => {

@@ -27,5 +27,4 @@ public class AuditLogController {
 
         return ResponseEntity.ok(result);
     }
-
 }

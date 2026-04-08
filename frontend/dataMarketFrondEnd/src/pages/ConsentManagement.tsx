@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Shield, Plus, X, Eye, Calendar, Users, Target, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { DataSet, ConsentRule } from '../types';
 import { Toast } from '../components/Toast';
 
-export default function ConsentManagement() {
+export default function ConsentManagement({ user }: { user: any }) {
   const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [consentRules, setConsentRules] = useState<ConsentRule[]>([]);
@@ -23,7 +23,7 @@ export default function ConsentManagement() {
 
   const fetchConsents = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/consents');
+      const response = await api.get('/api/consents');
         
       const normalizedData = response.data.map((rule: any) => {
         const safeParse = (value: any) => {
@@ -65,8 +65,8 @@ export default function ConsentManagement() {
 
   const fetchDatasets = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/datasets', {
-        params: { ownerId: 'owner1' } // Fetch owner's datasets
+      const response = await api.get('/api/datasets', {
+        params: { ownerId: user?.id } // Fetch owner's datasets
       });
 
       setDatasets(response.data);
@@ -83,7 +83,7 @@ export default function ConsentManagement() {
     if (selectedDataset) {
       const fetchAccessHistory = async () => {
         try {
-          const response = await axios.get('http://localhost:8080/api/access/requests', {
+          const response = await api.get('/api/access/requests', {
             params: { datasetId: selectedDataset }
           });
           setAccessHistory(response.data);
@@ -111,7 +111,7 @@ export default function ConsentManagement() {
     if (!selectedDataset) return;
 
     const ruleData = {
-      ownerId: 'owner1', // Keep as string for backend user_id reference if needed, though POJO might expect String
+      ownerId: user?.id, // Keep as string for backend user_id reference if needed, though POJO might expect String
       datasetId: selectedDataset, // e.g., 'ds1', 'ds2' exactly as backend datasets table uses
       allowedRoles: formData.allowedRoles,
       allowedPurposes: formData.allowedPurposes,
@@ -122,7 +122,7 @@ export default function ConsentManagement() {
     };
 
     try {
-      const response = await axios.post('http://localhost:8080/api/consents', ruleData);
+      const response = await api.post('/api/consents', ruleData);
       console.log('Rule created successfully:', response.data);
       setToast({ show: true, message: 'Consent rule created successfully!', type: 'success' });
       setShowCreateModal(false);
@@ -147,7 +147,7 @@ export default function ConsentManagement() {
     }
 
     try {
-      await axios.put(`http://localhost:8080/api/consents/${ruleId}/revoke`);
+      await api.put(`/api/consents/${ruleId}/revoke`);
       setToast({ show: true, message: 'Consent rule revoked successfully!', type: 'success' });
       fetchConsents();
     } catch (error) {
