@@ -14,7 +14,6 @@ import java.util.Map;
 @Data
 @TableName(value = "datasets", autoResultMap = true)
 public class Dataset {
-
     @TableId(type = IdType.ASSIGN_UUID)
     private String id;
 

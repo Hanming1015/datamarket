@@ -65,9 +65,8 @@ export default function ConsentManagement({ user }: { user: any }) {
 
   const fetchDatasets = async () => {
     try {
-      const response = await api.get('/api/datasets', {
-        params: { ownerId: user?.id } // Fetch owner's datasets
-      });
+      // Use the newly created datasetApi which points to /api/datasets/list
+      const response = await api.get('/api/datasets/list');
 
       setDatasets(response.data);
     } catch (error) {

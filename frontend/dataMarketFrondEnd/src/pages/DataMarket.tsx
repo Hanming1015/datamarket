@@ -27,8 +27,23 @@ export default function DataMarket({ user }: { user: any }) {
         if (selectedCategory !== 'all') params.category = selectedCategory;
         if (searchQuery) params.keyword = searchQuery;
         
-        const response = await api.get('/api/datasets', { params });
-        setDatasets(response.data);
+        // Use the authenticated datasetApi's list endpoint
+        const response = await api.get('/api/datasets/list', { params });
+        
+        // Since backend currently doesn't implement query wrappers for these params,
+        // we filter the results safely on the frontend for now:
+        let filteredData = response.data || [];
+        if (selectedCategory !== 'all') {
+            filteredData = filteredData.filter((ds: any) => ds.category?.toLowerCase() === selectedCategory.toLowerCase());
+        }
+        if (searchQuery) {
+            filteredData = filteredData.filter((ds: any) => 
+                ds.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                ds.description?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+        
+        setDatasets(filteredData);
       } catch (error) {
         console.error("Failed to fetch datasets", error);
       }

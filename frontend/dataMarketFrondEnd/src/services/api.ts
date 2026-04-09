@@ -39,4 +39,11 @@ export const authApi = {
   getInfo: () => api.get('/api/user/account/info'),
 };
 
+export const datasetApi = {
+  list: () => api.get('/api/datasets/list'),
+  add: (dataset: any) => api.post('/api/datasets/add', dataset),
+  update: (dataset: any) => api.put('/api/datasets/update', dataset),
+  remove: (id: string) => api.delete(`/api/datasets/remove/${id}`),
+};
+
 export default api;

@@ -19,7 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @TableName(value = "consent_rules", autoResultMap = true)
 public class ConsentRule {
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_UUID)
     private String id;
 
     private String datasetId;
