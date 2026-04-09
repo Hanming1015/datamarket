@@ -29,7 +29,7 @@ public class PricingEngine {
         // 1. 从数据库查出最新的定价配置 (拿 id=1 兜底)
         PricingConfig config = pricingConfigMapper.selectById(1);
         if (config == null) {
-            throw new RuntimeException("系统定价配置缺失，无法计费");
+            throw new RuntimeException("The system pricing configuration is missing, and thus billing cannot be performed.");
         }
 
         // 2. 识别敏感字段

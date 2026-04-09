@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Database, Loader, X } from 'lucide-react';
-import { datasetApi } from '../services/api';
+import { Plus, Edit2, Trash2, Database, Loader, X, DollarSign } from 'lucide-react';
+import { datasetApi, pricingConfigApi } from '../services/api';
 import { Toast } from '../components/Toast';
 
 interface Dataset {
@@ -20,6 +20,16 @@ export default function DatasetManagement({ user }: { user: any }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDataset, setEditingDataset] = useState<Dataset | null>(null);
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({ show: false, message: '', type: 'info' });
+
+  // Pricing Modal State
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [pricingDataset, setPricingDataset] = useState<Dataset | null>(null);
+  const [pricingForm, setPricingForm] = useState({
+    id: undefined as string | undefined,
+    perAccessBase: 0,
+    perField: 0,
+    sensitiveFieldMultiplier: 1.0
+  });
 
   // Form State
   const [formData, setFormData] = useState({
@@ -67,6 +77,53 @@ export default function DatasetManagement({ user }: { user: any }) {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingDataset(null);
+  };
+
+  const handleOpenPricingModal = async (dataset: Dataset) => {
+    setPricingDataset(dataset);
+    setIsPricingModalOpen(true);
+    setPricingForm({ id: undefined, perAccessBase: 0, perField: 0, sensitiveFieldMultiplier: 1.0 });
+
+    try {
+      const res = await pricingConfigApi.getByDataset(dataset.id);
+      if (res.data && res.data.id) {
+        setPricingForm({
+          id: res.data.id,
+          perAccessBase: res.data.perAccessBase || 0,
+          perField: res.data.perField || 0,
+          sensitiveFieldMultiplier: res.data.sensitiveFieldMultiplier || 1.0
+        });
+      }
+    } catch (err: any) {
+      // It might be a 404/Empty if no config exists, ignore it or handle properly
+      console.log('No existing pricing config found');
+    }
+  };
+
+  const handleSavePricing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pricingDataset) return;
+
+    try {
+      const payload = {
+        id: pricingForm.id,
+        datasetId: pricingDataset.id,
+        perAccessBase: Number(pricingForm.perAccessBase),
+        perField: Number(pricingForm.perField),
+        sensitiveFieldMultiplier: Number(pricingForm.sensitiveFieldMultiplier)
+      };
+
+      if (pricingForm.id) {
+        await pricingConfigApi.update(payload);
+        setToast({ show: true, message: 'Pricing updated successfully', type: 'success' });
+      } else {
+        await pricingConfigApi.add(payload);
+        setToast({ show: true, message: 'Pricing configured successfully', type: 'success' });
+      }
+      setIsPricingModalOpen(false);
+    } catch (err) {
+      setToast({ show: true, message: 'Failed to save pricing configuration', type: 'error' });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -172,6 +229,9 @@ export default function DatasetManagement({ user }: { user: any }) {
                       <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{dataset.description}</p>
                     </div>
                     <div className="ml-4 flex-shrink-0 flex gap-1">
+                      <button onClick={() => handleOpenPricingModal(dataset)} className="p-2.5 text-gray-400 hover:text-green-600 rounded-full hover:bg-green-100 transition duration-200" title="Manage Pricing">
+                        <DollarSign className="w-4 h-4" />
+                      </button>
                       <button onClick={() => handleOpenModal(dataset)} className="p-2.5 text-gray-400 hover:text-blue-600 rounded-full hover:bg-blue-100 transition duration-200" title="Edit Dataset">
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -269,6 +329,52 @@ export default function DatasetManagement({ user }: { user: any }) {
               <div className="pt-4 flex justify-end gap-3 border-t">
                 <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">Cancel</button>
                 <button type="submit" className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium">{editingDataset ? 'Save Changes' : 'Add Dataset'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Pricing Modal */}
+      {isPricingModalOpen && pricingDataset && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-green-600" />
+                Pricing Configuration
+              </h2>
+              <button onClick={() => setIsPricingModalOpen(false)} className="text-gray-500 hover:bg-gray-100 p-2 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="px-6 pt-4 pb-2 text-sm text-gray-500">
+              Set pricing for: <span className="font-semibold text-gray-900">{pricingDataset.name}</span>
+            </div>
+
+            <form onSubmit={handleSavePricing} className="p-6 space-y-4 pt-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Base Access Fee ($)</label>
+                <input required type="number" step="0.01" min="0" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 bg-white" value={pricingForm.perAccessBase} onChange={e => setPricingForm({ ...pricingForm, perAccessBase: Number(e.target.value) })} />
+                <p className="text-xs text-gray-500 mt-1">Starting price to request access to this dataset</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fee per Field ($)</label>
+                <input required type="number" step="0.01" min="0" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 bg-white" value={pricingForm.perField} onChange={e => setPricingForm({ ...pricingForm, perField: Number(e.target.value) })} />
+                <p className="text-xs text-gray-500 mt-1">Cost multiplied by the number of fields selected</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sensitive Field Multiplier</label>
+                <input required type="number" step="0.1" min="1" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 bg-white" value={pricingForm.sensitiveFieldMultiplier} onChange={e => setPricingForm({ ...pricingForm, sensitiveFieldMultiplier: Number(e.target.value) })} />
+                <p className="text-xs text-gray-500 mt-1">Multiplier for accessing highly restricted fields (default: 1.0)</p>
+              </div>
+              
+              <div className="pt-4 flex justify-end gap-3 border-t">
+                <button type="button" onClick={() => setIsPricingModalOpen(false)} className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg font-medium">Save Pricing</button>
               </div>
             </form>
           </div>

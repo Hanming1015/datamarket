@@ -34,8 +34,8 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }: Registe
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.username.trim() || !formData.password.trim()) {
-      setToast({ show: true, message: 'Username and password are required', type: 'warning' });
+    if (!formData.username.trim() || !formData.password.trim() || !formData.organization) {
+      setToast({ show: true, message: 'Please fill in all required fields including Organization Type', type: 'warning' });
       return;
     }
 
@@ -134,16 +134,20 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }: Registe
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Organization</label>
-              <input
-                type="text"
+              <label className="block text-sm font-medium text-gray-700 mb-2">Organization Type</label>
+              <select
                 name="organization"
                 value={formData.organization}
                 onChange={handleChange}
-                placeholder="Your organization"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-white"
                 disabled={loading}
-              />
+              >
+                <option value="" disabled>Select your organization type</option>
+                <option value="Research Institution">Research Institution</option>
+                <option value="University">University</option>
+                <option value="Pharmaceutical Company">Pharmaceutical Company</option>
+                <option value="Healthcare Provider">Healthcare Provider</option>
+              </select>
             </div>
 
             <div>

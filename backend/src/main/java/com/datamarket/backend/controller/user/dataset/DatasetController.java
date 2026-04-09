@@ -31,6 +31,7 @@ public class DatasetController {
 
     @DeleteMapping("/remove/{id}")
     public ResponseEntity<?> removeDataset(@PathVariable String id) {
+        datasetService.removeDataset(id);
         return ResponseEntity.ok("Dataset deleted successfully");
     }
 

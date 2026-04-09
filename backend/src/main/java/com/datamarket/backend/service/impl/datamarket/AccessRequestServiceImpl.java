@@ -8,6 +8,7 @@ import com.datamarket.backend.mapper.AccessRequestMapper;
 import com.datamarket.backend.mapper.BillingRecordMapper;
 import com.datamarket.backend.mapper.DatasetMapper;
 import com.datamarket.backend.pojo.AccessRequest;
+import com.datamarket.backend.pojo.BillingRecord;
 import com.datamarket.backend.pojo.Dataset;
 import com.datamarket.backend.pojo.User;
 import com.datamarket.backend.service.auditlog.AuditLogService;
@@ -22,10 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class AccessRequestServiceImpl implements AccessRequestService {
@@ -63,19 +61,19 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)  // 读写多张表，必须开启事务
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> processAccessRequest(DataAccessRequest request) {
 
-        // 1. 查数据集信息 (这里我用模拟数据代替 datasetMapper 的查询)
         Dataset dataset = datasetMapper.selectById(request.getDatasetId());
         String datasetName = (dataset != null) ? dataset.getName() : "Unknown Dataset";
+        List<Map<String, Object>> fieldsSchema = (dataset != null) ? dataset.getFieldsSchema() : new ArrayList<>();
 
-        // --- 核心第一步：匹配引擎判决 ---
+        // 1. 匹配引擎判决
         MatchResult match = matchingEngine.match(request);
 
         User user = SecurityUtil.getCurrentUser();
 
-        // 2. 组装要存库的 POJO 胖子
+        // 2. 组装要存库的 POJO
         AccessRequest ar = new AccessRequest();
         ar.setId(UUID.randomUUID().toString());
         ar.setDatasetId(request.getDatasetId());
@@ -109,16 +107,35 @@ public class AccessRequestServiceImpl implements AccessRequestService {
             ar.setRespondedAt(LocalDateTime.now());
 
             // --- 核心第二步：定价引擎算钱 ---
-            // 传入的 schema 先用 null 代替，你可以改成 dataset.getFieldsSchema()
-            pricing = pricingEngine.calculate(match.getAllowedFields(), null, request.getPurpose(), request.getRequesterId());
+            pricing = pricingEngine.calculate(match.getAllowedFields(), fieldsSchema, request.getPurpose(), request.getRequesterId());
             ar.setCost(pricing.getTotalCost());
 
             // 存访问记录表
             accessRequestMapper.insert(ar);
 
             // 【计费逻辑】如果建了 BillingRecord 表，在这里生成账单并 insert
-            // BillingRecord bill = new BillingRecord(...);
-            // billingRecordMapper.insert(bill);
+//            BillingRecord bill = new BillingRecord();
+//
+//            bill.setAccessRequestId(ar.getId()); // 关联刚才生成的请求记录ID
+//            bill.setDatasetId(ar.getDatasetId());
+//            bill.setBuyerId(ar.getRequesterId()); // 买方：发起请求的人
+//            bill.setSellerId(dataset != null ? dataset.getOwnerId() : null); // 卖方：数据集的拥有者
+//
+//            // 直接使用上面 pricingEngine 计算出来的最终总价
+//            bill.setAmount(pricing.getTotalCost());
+//
+//            // 初始账单状态，如果是后付费/待支付模式则设为 PENDING
+//            // 如果你希望请求一通过就立刻算是交易完成，那就是 COMPLETED
+//            bill.setStatus("PENDING");
+//
+//            bill.setCreatedAt(LocalDateTime.now());
+
+            // 可选：把价格引擎算出来的明细存进备注字段（如果你有这个字段的话，方便以后对账）
+            // bill.setPricingDetails(String.format("Base: %s, Mult: %s, Total: %s",
+            //     pricing.getBaseCost(), pricing.getPurposeMultiplier(), pricing.getTotalCost()));
+
+            // 插入数据库
+//            billingRecordMapper.insert(bill);
 
             // 存审计日志
             auditLogService.addAuditLog(user.getId(), user.getUsername(), "data_accessed", request.getDatasetId(), datasetName,

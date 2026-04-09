@@ -12,14 +12,17 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName(value = "pricing_config", autoResultMap = true)
 public class PricingConfig {
-    @TableId(type = IdType.AUTO)
-    private Integer id;
+    @TableId(type = IdType.ASSIGN_UUID)
+    private String id;
+
+    private String datasetId;
     
     private BigDecimal perAccessBase;
 

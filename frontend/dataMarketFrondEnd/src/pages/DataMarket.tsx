@@ -79,6 +79,7 @@ export default function DataMarket({ user }: { user: any }) {
       const payload = {
         requesterId: user?.id,
         requesterName: user?.name,
+        // Send the specific type that perfectly matches Consent Allowed Roles
         consumerType: user?.organization || "Research Institution",
         datasetId: selectedDataset.id,
         purpose: requestForm.purpose,

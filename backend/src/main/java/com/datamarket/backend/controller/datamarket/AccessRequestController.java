@@ -17,6 +17,7 @@ public class AccessRequestController {
 
     @PostMapping("/request")
     public ResponseEntity<?> requestAccess(@RequestBody DataAccessRequest request) {
+        //System.out.println("request: " + request);
         Map<String, Object> response = accessRequestService.processAccessRequest(request);
         return ResponseEntity.ok(response);
     }

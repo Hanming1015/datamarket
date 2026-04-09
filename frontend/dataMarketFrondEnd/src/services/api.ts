@@ -46,4 +46,11 @@ export const datasetApi = {
   remove: (id: string) => api.delete(`/api/datasets/remove/${id}`),
 };
 
+export const pricingConfigApi = {
+  add: (config: any) => api.post('/user/dataset/pricingconfig/add', config),
+  getByDataset: (datasetId: string) => api.get(`/user/dataset/pricingconfig/get/${datasetId}`),
+  update: (config: any) => api.put('/user/dataset/pricingconfig/put', config),
+  remove: (id: string) => api.delete(`/user/dataset/pricingconfig/delete/${id}`),
+};
+
 export default api;
