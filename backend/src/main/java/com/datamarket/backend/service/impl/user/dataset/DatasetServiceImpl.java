@@ -2,6 +2,7 @@ package com.datamarket.backend.service.impl.user.dataset;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.datamarket.backend.mapper.DatasetMapper;
+import com.datamarket.backend.mapper.UserMapper;
 import com.datamarket.backend.pojo.Dataset;
 import com.datamarket.backend.pojo.User;
 import com.datamarket.backend.service.impl.utils.UserDetailsImpl;
@@ -20,6 +21,9 @@ public class DatasetServiceImpl implements DatasetService {
 
     @Autowired
     private DatasetMapper datasetMapper;
+
+    @Autowired
+    private UserMapper userMapper;
 
     private User getCurrentUser() {
         UsernamePasswordAuthenticationToken authenticationToken =
@@ -63,5 +67,22 @@ public class DatasetServiceImpl implements DatasetService {
     @Override
     public void removeDataset(String id) {
         datasetMapper.deleteById(id);
+    }
+
+    @Override
+    public List<Dataset> getDatasetListAll() {
+        List<Dataset> datasets = datasetMapper.selectList(null);
+        //System.out.println("datasets: " + datasets);
+        for (Dataset dataset : datasets) {
+            if (dataset.getOwnerId() != null) {
+                User owner = userMapper.selectById(dataset.getOwnerId());
+                //System.out.println("owner: " + owner);
+                if (owner != null) {
+                    dataset.setOwnerName(owner.getUsername());
+                }
+            }
+        }
+
+        return datasets;
     }
 }

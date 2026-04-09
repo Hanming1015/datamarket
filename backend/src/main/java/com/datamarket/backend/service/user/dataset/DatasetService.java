@@ -13,4 +13,6 @@ public interface DatasetService {
     Dataset updateDataset(Dataset dataset);
 
     void removeDataset(String id);
+
+    List<Dataset> getDatasetListAll();
 }

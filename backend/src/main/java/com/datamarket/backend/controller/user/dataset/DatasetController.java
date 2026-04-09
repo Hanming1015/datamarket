@@ -33,5 +33,10 @@ public class DatasetController {
     public ResponseEntity<?> removeDataset(@PathVariable String id) {
         return ResponseEntity.ok("Dataset deleted successfully");
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<?> getDatasetListAll() {
+        return ResponseEntity.ok(datasetService.getDatasetListAll());
+    }
 }
 

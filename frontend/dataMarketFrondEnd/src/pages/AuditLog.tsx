@@ -188,33 +188,31 @@ export default function AuditLog({ user }: { user: any }) {
                   </div>
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-4 mb-2">
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <div className="flex items-start justify-between gap-4 mb-2.5">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getActionColor(log.action)}`}>
+                      <div className="flex items-center gap-2.5 mb-2">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getActionColor(log.action)}`}>
                           {formatActionLabel(log.action)}
                         </span>
-                        <span className="text-sm text-gray-600">by</span>
-                        <span className="font-semibold text-gray-900">{log.userName}</span>
+                        <span className="text-[13px] text-gray-500 font-medium">by</span>
+                        <span className="text-[15px] font-bold text-gray-900 tracking-tight">{log.userName || log.userId}</span>
                       </div>
-                      <p className="text-sm text-gray-700">{log.details}</p>
+                      <p className="text-[14px] text-gray-700 font-medium leading-relaxed">{log.details}</p>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-xs text-gray-500">
+                    <div className="text-right flex-shrink-0 mt-0.5">
+                      <p className="text-xs font-semibold text-gray-500 mb-0.5">
                         {new Date(log.timestamp).toLocaleDateString()}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-[11px] text-gray-400 font-medium">
                         {new Date(log.timestamp).toLocaleTimeString()}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 text-xs text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Database className="w-3 h-3" />
-                      <span>{log.datasetName}</span>
-                    </div>
+                  <div className="flex items-center gap-1.5 text-[13px] text-slate-600 font-medium bg-slate-50 w-fit px-2 py-1 rounded-md border border-slate-100">
+                    <Database className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="truncate max-w-[400px]" title={log.datasetName}>{log.datasetName}</span>
                   </div>
                 </div>
               </div>

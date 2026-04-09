@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Database, FileText, Send, X, CheckCircle2, AlertCircle, Clock, Filter } from 'lucide-react';
+import { Search, Database, FileText, Send, X, CheckCircle2, AlertCircle, Clock, Filter, User, Hash } from 'lucide-react';
 import { DataSet } from '../types';
 import api from '../services/api';
 import { Toast } from '../components/Toast';
@@ -27,8 +27,9 @@ export default function DataMarket({ user }: { user: any }) {
         if (selectedCategory !== 'all') params.category = selectedCategory;
         if (searchQuery) params.keyword = searchQuery;
         
-        // Use the authenticated datasetApi's list endpoint
-        const response = await api.get('/api/datasets/list', { params });
+        // 获取市场上的所有数据集（不再限制 owner）
+        const response = await api.get('/api/datasets/all', { params });
+        //console.log("Fetched datasets from backend:", response.data);
         
         // Since backend currently doesn't implement query wrappers for these params,
         // we filter the results safely on the frontend for now:
@@ -180,17 +181,23 @@ export default function DataMarket({ user }: { user: any }) {
                         {dataset.category}
                       </span>
                     </div>
-                    <p className="text-gray-600 text-sm mb-4">{dataset.description}</p>
-                    <div className="flex gap-4 text-sm">
-                      <div className="flex items-center gap-1 text-gray-500">
-                        <FileText className="w-4 h-4" />
+                    <p className="text-gray-600 text-sm mb-5 leading-relaxed line-clamp-2 md:line-clamp-3" title={dataset.description}>
+                      {dataset.description}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-3 mt-auto pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-1.5 text-gray-500 text-sm font-medium bg-gray-50 px-2.5 py-1 rounded-md">
+                        <Database className="w-4 h-4 text-blue-500" />
                         <span>{dataset.recordCount.toLocaleString()} records</span>
                       </div>
-                      <div className="flex items-center gap-1 text-gray-500">
+                      <div className="flex items-center gap-1.5 text-gray-500 text-sm font-medium bg-gray-50 px-2.5 py-1 rounded-md">
+                        <Hash className="w-4 h-4 text-emerald-500" />
                         <span>{dataset.fields.length} fields</span>
                       </div>
-                      <div className="flex items-center gap-1 text-gray-500">
-                        <span>Owner: {dataset.owner}</span>
+                      <div className="flex items-center gap-1.5 text-gray-500 text-sm font-medium bg-gray-50 px-2.5 py-1 rounded-md">
+                        <User className="w-4 h-4 text-purple-500" />
+                        <span className="truncate max-w-[120px]" title={(dataset as any).ownerName || dataset.owner || 'Unknown'}>
+                          Owner: {(dataset as any).ownerName || dataset.owner || 'Unknown'}
+                        </span>
                       </div>
                     </div>
                   </div>

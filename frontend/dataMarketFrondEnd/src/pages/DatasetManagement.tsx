@@ -241,7 +241,18 @@ export default function DatasetManagement({ user }: { user: any }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <input required type="text" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="e.g. Healthcare"/>
+                  <select 
+                    required 
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white" 
+                    value={formData.category} 
+                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                  >
+                    <option value="" disabled>Select a category...</option>
+                    <option value="health">health</option>
+                    <option value="fitness">fitness</option>
+                    <option value="genomic">genomic</option>
+                    <option value="lifestyle">lifestyle</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Record Count</label>

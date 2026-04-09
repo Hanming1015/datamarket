@@ -34,4 +34,7 @@ public class Dataset {
     private String category;
 
     private LocalDateTime createdAt;
+
+    @TableField(exist = false)
+    private String ownerName;
 }

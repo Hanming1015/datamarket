@@ -48,7 +48,7 @@ public class AuditLogServiceImpl implements AuditLogService {
         auditLog.setUserName(username);
         auditLog.setAction(action);
         auditLog.setDatasetId(datasetId);
-        auditLog.setDatasetName("Dataset-" + datasetName);
+        auditLog.setDatasetName(datasetName);
         auditLog.setDetails(details);
 
         //System.out.println("AuditLog: " + auditLog);
