@@ -162,35 +162,51 @@ export default function DatasetManagement({ user }: { user: any }) {
           <ul className="divide-y divide-gray-200">
             {datasets.map((dataset) => (
               <li key={dataset.id}>
-                <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 transition">
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-blue-600 truncate">{dataset.name}</p>
-                      <p className="text-sm text-gray-500 mt-1">{dataset.description}</p>
+                <div className="px-5 py-5 sm:px-8 hover:bg-gray-50 transition border-l-4 border-transparent hover:border-blue-500">
+                  <div className="flex items-start justify-between">
+                    <div className="flex flex-col max-w-4xl">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Database className="w-5 h-5 text-blue-600" />
+                        <h3 className="text-lg font-bold text-gray-900 tracking-tight">{dataset.name}</h3>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{dataset.description}</p>
                     </div>
-                    <div className="ml-2 flex-shrink-0 flex gap-2">
-                      <button onClick={() => handleOpenModal(dataset)} className="p-2 text-gray-400 hover:text-blue-600 rounded-full hover:bg-blue-50 transition">
+                    <div className="ml-4 flex-shrink-0 flex gap-1">
+                      <button onClick={() => handleOpenModal(dataset)} className="p-2.5 text-gray-400 hover:text-blue-600 rounded-full hover:bg-blue-100 transition duration-200" title="Edit Dataset">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(dataset.id)} className="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-50 transition">
+                      <button onClick={() => handleDelete(dataset.id)} className="p-2.5 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100 transition duration-200" title="Delete Dataset">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                  <div className="mt-2 sm:flex sm:justify-between">
-                    <div className="sm:flex gap-4">
-                      <p className="flex items-center text-sm text-gray-500">
-                        Category: <span className="ml-1 font-medium text-gray-700">{dataset.category}</span>
-                      </p>
-                      <p className="flex items-center text-sm text-gray-500 mt-2 sm:mt-0">
-                        Records: <span className="ml-1 font-medium text-gray-700">{dataset.recordCount.toLocaleString()}</span>
-                      </p>
-                      <p className="flex items-center text-sm text-gray-500 mt-2 sm:mt-0">
-                        Fields: <span className="ml-1 font-medium text-gray-700">{dataset.fields?.join(', ') || '-'}</span>
-                      </p>
+                  <div className="mt-4 flex flex-col gap-3">
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
+                      <div className="flex flex-wrap gap-4">
+                        <p className="flex items-center text-sm text-gray-500">
+                          Category: <span className="ml-2 px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full font-medium text-xs capitalize">{dataset.category}</span>
+                        </p>
+                        <p className="flex items-center text-sm text-gray-500">
+                          Records: <span className="ml-2 font-medium text-gray-700">{dataset.recordCount.toLocaleString()}</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        Created: {new Date(dataset.createdAt).toLocaleDateString()}
+                      </div>
                     </div>
-                    <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                      Created: {new Date(dataset.createdAt).toLocaleDateString()}
+                    <div className="flex items-start mt-1">
+                      <span className="text-sm text-gray-500 mr-3 mt-0.5 whitespace-nowrap">Fields:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {dataset.fields && dataset.fields.length > 0 ? (
+                          dataset.fields.map((field, idx) => (
+                            <span key={idx} className="px-2 py-0.5 bg-gray-100/80 border border-gray-200 text-gray-600 rounded-md text-xs font-mono shadow-sm">
+                              {field}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-gray-500">-</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

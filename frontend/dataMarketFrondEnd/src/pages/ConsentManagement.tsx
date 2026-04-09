@@ -7,6 +7,7 @@ import { Toast } from '../components/Toast';
 export default function ConsentManagement({ user }: { user: any }) {
   const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showRevokeModal, setShowRevokeModal] = useState<string | null>(null);
   const [consentRules, setConsentRules] = useState<ConsentRule[]>([]);
   const [datasets, setDatasets] = useState<DataSet[]>([]);
   const [accessHistory, setAccessHistory] = useState<any[]>([]);
@@ -140,10 +141,15 @@ export default function ConsentManagement({ user }: { user: any }) {
     }
   };
 
-  const handleRevokeRule = async (ruleId: string) => {
-    if (!window.confirm('Are you sure you want to revoke this consent rule? This action will block future access requests relying on this rule immediately.')) {
-      return;
-    }
+  const handleRevokeRule = (ruleId: string) => {
+    setShowRevokeModal(ruleId);
+  };
+
+  const confirmRevokeRule = async () => {
+    if (!showRevokeModal) return;
+
+    const ruleId = showRevokeModal;
+    setShowRevokeModal(null);
 
     try {
       await api.put(`/api/consents/${ruleId}/revoke`);
@@ -492,6 +498,37 @@ export default function ConsentManagement({ user }: { user: any }) {
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                   Create Rule
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revoke Confirmation Modal */}
+      {showRevokeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full">
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-red-600 mb-4">
+                <XCircle className="w-8 h-8" />
+                <h3 className="text-xl font-bold">Revoke Consent</h3>
+              </div>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                Are you sure you want to revoke this consent rule? This action will immediately block future access requests relying on this rule.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowRevokeModal(null)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmRevokeRule}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Yes, Revoke
                 </button>
               </div>
             </div>

@@ -1,6 +1,10 @@
 package com.datamarket.backend.service.impl.consentmanagement;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.datamarket.backend.mapper.DatasetMapper;
+import com.datamarket.backend.pojo.Dataset;
+import com.datamarket.backend.pojo.User;
+import com.datamarket.backend.utils.SecurityUtil;
 import org.springframework.util.StringUtils;
 import com.datamarket.backend.mapper.ConsentRuleMapper;
 import com.datamarket.backend.pojo.ConsentRule;
@@ -25,12 +29,18 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
     @Autowired
     private AuditLogService auditLogService;
 
+    @Autowired
+    private DatasetMapper datasetMapper;
+
+
     @Override
     @Transactional
     public ConsentRule createConsentRule(Map<String, Object> body) {
         //System.out.println("Body: " + body);
 
         ConsentRule consentRule = new ConsentRule();
+
+        User user = SecurityUtil.getCurrentUser();
 
         String datasetId = body.get("datasetId").toString();
         consentRule.setId(UUID.randomUUID().toString());
@@ -39,6 +49,10 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
         consentRule.setAllowedRoles((List<String>) body.get("allowedRoles"));
         consentRule.setAllowedPurposes((List<String>) body.get("allowedPurposes"));
         consentRule.setAllowedFields((List<String>) body.get("allowedFields"));
+
+        Dataset dataset = datasetMapper.selectById(consentRule.getDatasetId());
+        //System.out.println("Dataset: " + dataset);
+        String datasetName = (dataset != null) ? dataset.getName() : "Unknown Dataset";
 
         if (body.containsKey("deniedFields")) {
             consentRule.setDeniedFields((List<String>) body.get("deniedFields"));
@@ -54,7 +68,7 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
         consentRuleMapper.insert(consentRule);
 
         //Silently record an audit log.
-        auditLogService.addAuditLog("owner1", "consent_created", consentRule.getDatasetId(), "Created consent for roles: " + String.join(",", consentRule.getAllowedRoles()));
+        auditLogService.addAuditLog(user.getId(), user.getUsername(), "consent_created", consentRule.getDatasetId(), datasetName,"Created consent for roles: " + String.join(",", consentRule.getAllowedRoles()));
 
         return consentRule;
     }
@@ -62,10 +76,14 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
     @Override
     public void revokeConsentRule(String id) {
         ConsentRule consentRule = consentRuleMapper.selectById(id);
-
         if (consentRule == null) {
-            throw new RuntimeException("No such consent rule！ID: " + id);
+            throw new RuntimeException("No such consent rule！");
         }
+
+        User user = SecurityUtil.getCurrentUser();
+
+        Dataset dataset = datasetMapper.selectById(consentRule.getDatasetId());
+        String datasetName = (dataset != null) ? dataset.getName() : "Unknown Dataset";
 
         consentRule.setStatus("revoked");
 
@@ -74,7 +92,7 @@ public class ConsentRuleServiceImpl implements ConsentRuleService {
         consentRuleMapper.updateById(consentRule);
 
         //Silently record an audit log.
-        auditLogService.addAuditLog("owner1", "consent_revoked", consentRule.getDatasetId(), "Revoked consent for roles: " + String.join(",", consentRule.getAllowedRoles()));
+        auditLogService.addAuditLog(user.getId(), user.getUsername(), "consent_revoked", consentRule.getDatasetId(), datasetName, "Revoked consent for roles: " + String.join(",", consentRule.getAllowedRoles()));
     }
 
     @Override

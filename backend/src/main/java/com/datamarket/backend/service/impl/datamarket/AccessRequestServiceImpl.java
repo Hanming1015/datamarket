@@ -5,11 +5,16 @@ import com.datamarket.backend.dto.PricingResult;
 import com.datamarket.backend.engine.ConsentMatchingEngine;
 import com.datamarket.backend.engine.PricingEngine;
 import com.datamarket.backend.mapper.AccessRequestMapper;
+import com.datamarket.backend.mapper.BillingRecordMapper;
+import com.datamarket.backend.mapper.DatasetMapper;
 import com.datamarket.backend.pojo.AccessRequest;
+import com.datamarket.backend.pojo.Dataset;
+import com.datamarket.backend.pojo.User;
 import com.datamarket.backend.service.auditlog.AuditLogService;
 import com.datamarket.backend.service.datamarket.AccessRequestService;
 import com.datamarket.backend.dto.MatchResult;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.datamarket.backend.utils.SecurityUtil;
 import org.springframework.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,9 +39,9 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     @Autowired
     private AccessRequestMapper accessRequestMapper;
 
-    // 假设你有以下依赖，如果没有可以先注释掉跑通主流程
-    // @Autowired private DatasetMapper datasetMapper;
-    // @Autowired private BillingRecordMapper billingRecordMapper;
+    @Autowired private DatasetMapper datasetMapper;
+
+    @Autowired private BillingRecordMapper billingRecordMapper;
 
     @Autowired
     private AuditLogService auditLogService;
@@ -62,17 +67,19 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     public Map<String, Object> processAccessRequest(DataAccessRequest request) {
 
         // 1. 查数据集信息 (这里我用模拟数据代替 datasetMapper 的查询)
-        // Dataset dataset = datasetMapper.selectById(request.getDatasetId());
+        Dataset dataset = datasetMapper.selectById(request.getDatasetId());
+        String datasetName = (dataset != null) ? dataset.getName() : "Unknown Dataset";
 
         // --- 核心第一步：匹配引擎判决 ---
         MatchResult match = matchingEngine.match(request);
+
+        User user = SecurityUtil.getCurrentUser();
 
         // 2. 组装要存库的 POJO 胖子
         AccessRequest ar = new AccessRequest();
         ar.setId(UUID.randomUUID().toString());
         ar.setDatasetId(request.getDatasetId());
-        // ar.setDatasetName(dataset.getName());
-        ar.setDatasetName("模拟数据集名称");
+        ar.setDatasetName(datasetName);
         ar.setRequesterId(request.getRequesterId());
         ar.setRequesterName(request.getRequesterName());
         ar.setConsumerType(request.getConsumerType());
@@ -90,11 +97,9 @@ public class AccessRequestServiceImpl implements AccessRequestService {
             ar.setRespondedAt(LocalDateTime.now());
             ar.setCost(BigDecimal.ZERO);
 
-            // 存访问记录表
             accessRequestMapper.insert(ar);
 
-            // 存审计日志
-            auditLogService.addAuditLog(request.getRequesterId(), "request_rejected", request.getDatasetId(), "Rejected: " + match.getDenyReason());
+            auditLogService.addAuditLog(user.getId(), user.getUsername(), "request_rejected", request.getDatasetId(), datasetName,"Rejected: " + match.getDenyReason());
         } else {
             // 分支 B：完全通过 / 部分通过
             ar.setStatus(match.getDecision()); // 将被设为 "approved" 或 "partial"
@@ -116,7 +121,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
             // billingRecordMapper.insert(bill);
 
             // 存审计日志
-            auditLogService.addAuditLog(request.getRequesterId(), "data_accessed", request.getDatasetId(),
+            auditLogService.addAuditLog(user.getId(), user.getUsername(), "data_accessed", request.getDatasetId(), datasetName,
                     "Fields allowed: " + match.getAllowedFields().size() + " | Cost: $" + pricing.getTotalCost());
         }
 

@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.datamarket.backend.mapper.AuditLogMapper;
 import com.datamarket.backend.pojo.AuditLog;
 import com.datamarket.backend.service.auditlog.AuditLogService;
+import com.datamarket.backend.service.impl.utils.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,16 +38,17 @@ public class AuditLogServiceImpl implements AuditLogService {
     }
 
     @Override
-    public AuditLog addAuditLog(String userId, String action, String datasetId, String details) {
+    public AuditLog addAuditLog(String userId, String username, String action, String datasetId, String datasetName, String details) {
+
         AuditLog auditLog = new AuditLog();
 
         auditLog.setId(UUID.randomUUID().toString());
         auditLog.setTimestamp(java.time.LocalDateTime.now());
         auditLog.setUserId(userId);
-        auditLog.setUserName("System/Owner");
+        auditLog.setUserName(username);
         auditLog.setAction(action);
         auditLog.setDatasetId(datasetId);
-        auditLog.setDatasetName("Dataset-" + datasetId);
+        auditLog.setDatasetName("Dataset-" + datasetName);
         auditLog.setDetails(details);
 
         //System.out.println("AuditLog: " + auditLog);
