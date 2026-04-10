@@ -55,6 +55,7 @@ export interface BillingRecord {
   recordsAccessed: number;
   cost: number;
   date: string;
+  createdAt?: string;
 }
 
 export interface UsageStats {

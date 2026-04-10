@@ -12,6 +12,7 @@ import com.datamarket.backend.pojo.BillingRecord;
 import com.datamarket.backend.pojo.Dataset;
 import com.datamarket.backend.pojo.User;
 import com.datamarket.backend.service.auditlog.AuditLogService;
+import com.datamarket.backend.service.billing.BillingRecordService;
 import com.datamarket.backend.service.datamarket.AccessRequestService;
 import com.datamarket.backend.dto.MatchResult;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -39,10 +40,11 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
     @Autowired private DatasetMapper datasetMapper;
 
-    @Autowired private BillingRecordMapper billingRecordMapper;
-
     @Autowired
     private AuditLogService auditLogService;
+
+    @Autowired
+    private BillingRecordService billingRecordService;
 
     @Override
     public List<AccessRequest> getAccessRequests(String userId, String datasetId) {
@@ -63,6 +65,7 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> processAccessRequest(DataAccessRequest request) {
+        System.out.println("Processing access request: " + request);
 
         Dataset dataset = datasetMapper.selectById(request.getDatasetId());
         String datasetName = (dataset != null) ? dataset.getName() : "Unknown Dataset";
@@ -107,35 +110,14 @@ public class AccessRequestServiceImpl implements AccessRequestService {
             ar.setRespondedAt(LocalDateTime.now());
 
             // --- 核心第二步：定价引擎算钱 ---
-            pricing = pricingEngine.calculate(match.getAllowedFields(), fieldsSchema, request.getPurpose(), request.getRequesterId());
+            pricing = pricingEngine.calculate(match.getAllowedFields(), fieldsSchema, request.getPurpose(), request.getRequesterId(), request.getDatasetId());
             ar.setCost(pricing.getTotalCost());
 
             // 存访问记录表
             accessRequestMapper.insert(ar);
 
-            // 【计费逻辑】如果建了 BillingRecord 表，在这里生成账单并 insert
-//            BillingRecord bill = new BillingRecord();
-//
-//            bill.setAccessRequestId(ar.getId()); // 关联刚才生成的请求记录ID
-//            bill.setDatasetId(ar.getDatasetId());
-//            bill.setBuyerId(ar.getRequesterId()); // 买方：发起请求的人
-//            bill.setSellerId(dataset != null ? dataset.getOwnerId() : null); // 卖方：数据集的拥有者
-//
-//            // 直接使用上面 pricingEngine 计算出来的最终总价
-//            bill.setAmount(pricing.getTotalCost());
-//
-//            // 初始账单状态，如果是后付费/待支付模式则设为 PENDING
-//            // 如果你希望请求一通过就立刻算是交易完成，那就是 COMPLETED
-//            bill.setStatus("PENDING");
-//
-//            bill.setCreatedAt(LocalDateTime.now());
-
-            // 可选：把价格引擎算出来的明细存进备注字段（如果你有这个字段的话，方便以后对账）
-            // bill.setPricingDetails(String.format("Base: %s, Mult: %s, Total: %s",
-            //     pricing.getBaseCost(), pricing.getPurposeMultiplier(), pricing.getTotalCost()));
-
-            // 插入数据库
-//            billingRecordMapper.insert(bill);
+            // 生成账单记录
+            billingRecordService.createBillForAccess(ar, pricing, request);
 
             // 存审计日志
             auditLogService.addAuditLog(user.getId(), user.getUsername(), "data_accessed", request.getDatasetId(), datasetName,

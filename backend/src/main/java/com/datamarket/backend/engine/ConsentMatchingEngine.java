@@ -72,7 +72,12 @@ public class ConsentMatchingEngine {
         Map<String, String> reasons = new LinkedHashMap<>();
 
         // 6. 逐一判定请求申请的字段
-        for (String field : request.getRequestedFields()) {
+        List<String> requested = request.getRequestedFields();
+        if (requested == null || requested.isEmpty()) {
+            return MatchResult.deny("No fields requested");
+        }
+
+        for (String field : requested) {
             if (allDenied.contains(field)) {
                 // 如果命中黑名单，一票否决
                 finalDenied.add(field);

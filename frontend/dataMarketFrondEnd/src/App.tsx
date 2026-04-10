@@ -29,6 +29,7 @@ function App() {
           const response = await authApi.getInfo();
           console.log('🟢 [Token Verified] Fetched user info from backend:', response.data);
           setUser(response.data);
+          setCurrentPage(response.data.role === 'owner' ? 'dataset' : 'market');
           setIsAuthenticated(true);
         } catch (error) {
           console.error('🔴 [Token Invalid] Failed to fetch user info:', error);
@@ -43,6 +44,7 @@ function App() {
     console.log('🟢 [Login Success] User data received:', userData);
     setIsAuthenticated(true);
     setUser(userData);
+    setCurrentPage(userData?.role === 'owner' ? 'dataset' : 'market');
   };
 
   const handleLogout = () => {

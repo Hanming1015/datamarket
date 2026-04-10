@@ -1,6 +1,8 @@
 package com.datamarket.backend.engine;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.datamarket.backend.dto.PricingResult;
+import com.datamarket.backend.mapper.DatasetMapper;
 import com.datamarket.backend.mapper.PricingConfigMapper;
 import com.datamarket.backend.pojo.PricingConfig;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,11 +25,16 @@ public class PricingEngine {
     @Autowired
     private PricingConfigMapper pricingConfigMapper;
 
-    // 完整的字段 schema 通常附着在 Dataset 上，这里简化直接传 schema (List<Map<String, Object>>)
-    public PricingResult calculate(List<String> allowedFields, List<Map<String, Object>> fieldsSchema, String purpose, String consumerId) {
+    @Autowired
+    private DatasetMapper datasetMapper;
+
+    public PricingResult calculate(List<String> allowedFields, List<Map<String, Object>> fieldsSchema, String purpose, String consumerId, String datasetId) {
         
-        // 1. 从数据库查出最新的定价配置 (拿 id=1 兜底)
-        PricingConfig config = pricingConfigMapper.selectById(1);
+        // 1. 从数据库查出最新的定价配置
+        QueryWrapper<PricingConfig> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("dataset_id", datasetId);
+        PricingConfig config = pricingConfigMapper.selectOne(queryWrapper);
+
         if (config == null) {
             throw new RuntimeException("The system pricing configuration is missing, and thus billing cannot be performed.");
         }
@@ -53,7 +60,7 @@ public class PricingEngine {
             }
         }
 
-        // 4. 计算基础金额 (使用 BigDecimal)
+        // 4. 计算基础金额
         BigDecimal baseCost = config.getPerAccessBase() != null ? config.getPerAccessBase() : BigDecimal.ZERO;
         
         BigDecimal perField = config.getPerField() != null ? config.getPerField() : BigDecimal.ZERO;
@@ -65,31 +72,41 @@ public class PricingEngine {
         // 5. 获取用途倍率 
         BigDecimal purposeMultiplier = BigDecimal.ONE;
         if (config.getPurposeMultiplierJson() != null && config.getPurposeMultiplierJson().containsKey(purpose)) {
-            purposeMultiplier = config.getPurposeMultiplierJson().get(purpose);
+            Object rawMult = config.getPurposeMultiplierJson().get(purpose);
+            purposeMultiplier = new BigDecimal(rawMult.toString());
         }
 
-        // 6. 获取批量折扣 (假设目前 count=0)
-        int historyCount = 0; 
+        // 6. 获取批量折扣：采用本次实际请求的所有合法字段总数
+        int historyCount = allowedFields != null ? allowedFields.size() : 0; 
         BigDecimal bulkDiscount = calculateBulkDiscount(historyCount, config.getBulkDiscountJson());
 
         // 7. 大公式计算
-        BigDecimal total = baseCost.add(normalCost).add(sensitiveCost);
-        total = total.multiply(purposeMultiplier).multiply(bulkDiscount);
+        // 字段金额 = (普通字段费 + 敏感字段费) * 批量数量折扣
+        BigDecimal fieldsTotal = normalCost.add(sensitiveCost).multiply(bulkDiscount);
+        
+        // 总金额 = (基础访问费 + 折扣后的字段金额) * 取数用途倍率
+        BigDecimal total = baseCost.add(fieldsTotal).multiply(purposeMultiplier);
         total = total.setScale(2, RoundingMode.HALF_UP);
 
         return new PricingResult(baseCost, normalCost, sensitiveCost, purposeMultiplier, bulkDiscount, total);
     }
 
-    private BigDecimal calculateBulkDiscount(int count, Map<Integer, BigDecimal> tiers) {
+    private BigDecimal calculateBulkDiscount(int count, Map<?, ?> tiers) {
         if (tiers == null || tiers.isEmpty()) return BigDecimal.ONE;
         
         BigDecimal bestDiscount = BigDecimal.ONE;
         int highestTier = 0;
         
-        for (Map.Entry<Integer, BigDecimal> entry : tiers.entrySet()) {
-            if (count >= entry.getKey() && entry.getKey() > highestTier) {
-                highestTier = entry.getKey();
-                bestDiscount = entry.getValue();
+        for (Map.Entry<?, ?> entry : tiers.entrySet()) {
+            try {
+                int tierKey = Integer.parseInt(entry.getKey().toString());
+                BigDecimal discount = new BigDecimal(entry.getValue().toString());
+                if (count >= tierKey && tierKey > highestTier) {
+                    highestTier = tierKey;
+                    bestDiscount = discount;
+                }
+            } catch (Exception e) {
+                // 忽略解析错误的节点
             }
         }
         return bestDiscount;

@@ -1,14 +1,19 @@
 package com.datamarket.backend.service.impl.billing;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.datamarket.backend.dto.DataAccessRequest;
+import com.datamarket.backend.dto.PricingResult;
 import com.datamarket.backend.mapper.BillingRecordMapper;
 import com.datamarket.backend.mapper.DatasetMapper;
+import com.datamarket.backend.pojo.AccessRequest;
 import com.datamarket.backend.pojo.BillingRecord;
 import com.datamarket.backend.pojo.Dataset;
 import com.datamarket.backend.service.billing.BillingRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,5 +56,34 @@ public class BillingRecordServiceImpl implements BillingRecordService {
         } else {
             throw new IllegalArgumentException("Invalid role specified. Must be 'owner' or 'consumer'.");
         }
+    }
+
+    @Override
+    public BillingRecord createBillForAccess(AccessRequest ar, PricingResult pricing, DataAccessRequest request) {
+
+        BillingRecord bill = new BillingRecord();
+
+        bill.setUserId(request.getRequesterId());
+        bill.setUserName(request.getRequesterName());
+        bill.setDatasetId(ar.getDatasetId());
+        bill.setDatasetName(ar.getDatasetName());
+        bill.setAccessRequestId(ar.getId());
+
+        // 金额明细
+        bill.setBaseCost(pricing.getBaseCost());
+        bill.setFieldCost(pricing.getFieldCost());
+        bill.setSensitiveFieldCost(pricing.getSensitiveFieldCost());
+        bill.setPurposeMultiplier(pricing.getPurposeMultiplier());
+        bill.setBulkDiscount(pricing.getBulkDiscount());
+        bill.setCost(pricing.getTotalCost());
+
+        // 日期相关字段
+        bill.setDate(LocalDate.now());
+        bill.setCreatedAt(LocalDateTime.now());
+
+        // 存入数据库
+        billingRecordMapper.insert(bill);
+
+        return bill;
     }
 }

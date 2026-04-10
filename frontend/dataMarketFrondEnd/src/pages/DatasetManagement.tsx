@@ -15,6 +15,16 @@ interface Dataset {
 }
 
 export default function DatasetManagement({ user }: { user: any }) {
+  if (user?.role !== 'owner') {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-gray-500">
+        <Database className="w-16 h-16 text-gray-300 mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">No Content Available</h2>
+        <p>This page is reserved for Data Owners to manage their datasets.</p>
+      </div>
+    );
+  }
+
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,7 +38,9 @@ export default function DatasetManagement({ user }: { user: any }) {
     id: undefined as string | undefined,
     perAccessBase: 0,
     perField: 0,
-    sensitiveFieldMultiplier: 1.0
+    sensitiveFieldMultiplier: 1.0,
+    purposeMultiplierJson: '',
+    bulkDiscountJson: ''
   });
 
   // Form State
@@ -82,7 +94,14 @@ export default function DatasetManagement({ user }: { user: any }) {
   const handleOpenPricingModal = async (dataset: Dataset) => {
     setPricingDataset(dataset);
     setIsPricingModalOpen(true);
-    setPricingForm({ id: undefined, perAccessBase: 0, perField: 0, sensitiveFieldMultiplier: 1.0 });
+    setPricingForm({ 
+      id: undefined, 
+      perAccessBase: 0, 
+      perField: 0, 
+      sensitiveFieldMultiplier: 1.0,
+      purposeMultiplierJson: '',
+      bulkDiscountJson: ''
+    });
 
     try {
       const res = await pricingConfigApi.getByDataset(dataset.id);
@@ -91,7 +110,13 @@ export default function DatasetManagement({ user }: { user: any }) {
           id: res.data.id,
           perAccessBase: res.data.perAccessBase || 0,
           perField: res.data.perField || 0,
-          sensitiveFieldMultiplier: res.data.sensitiveFieldMultiplier || 1.0
+          sensitiveFieldMultiplier: res.data.sensitiveFieldMultiplier || 1.0,
+          purposeMultiplierJson: res.data.purposeMultiplierJson 
+            ? JSON.stringify(res.data.purposeMultiplierJson, null, 2) 
+            : '',
+          bulkDiscountJson: res.data.bulkDiscountJson 
+            ? JSON.stringify(res.data.bulkDiscountJson, null, 2) 
+            : ''
         });
       }
     } catch (err: any) {
@@ -104,13 +129,24 @@ export default function DatasetManagement({ user }: { user: any }) {
     e.preventDefault();
     if (!pricingDataset) return;
 
+    let parsedPurpose = null, parsedBulk = null;
+    try {
+      parsedPurpose = pricingForm.purposeMultiplierJson.trim() ? JSON.parse(pricingForm.purposeMultiplierJson) : null;
+      parsedBulk = pricingForm.bulkDiscountJson.trim() ? JSON.parse(pricingForm.bulkDiscountJson) : null;
+    } catch (error) {
+      setToast({ show: true, message: 'Invalid JSON format in configuration fields', type: 'error' });
+      return; 
+    }
+
     try {
       const payload = {
         id: pricingForm.id,
         datasetId: pricingDataset.id,
         perAccessBase: Number(pricingForm.perAccessBase),
         perField: Number(pricingForm.perField),
-        sensitiveFieldMultiplier: Number(pricingForm.sensitiveFieldMultiplier)
+        sensitiveFieldMultiplier: Number(pricingForm.sensitiveFieldMultiplier),
+        purposeMultiplierJson: parsedPurpose,
+        bulkDiscountJson: parsedBulk
       };
 
       if (pricingForm.id) {
@@ -370,6 +406,34 @@ export default function DatasetManagement({ user }: { user: any }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Sensitive Field Multiplier</label>
                 <input required type="number" step="0.1" min="1" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 bg-white" value={pricingForm.sensitiveFieldMultiplier} onChange={e => setPricingForm({ ...pricingForm, sensitiveFieldMultiplier: Number(e.target.value) })} />
                 <p className="text-xs text-gray-500 mt-1">Multiplier for accessing highly restricted fields (default: 1.0)</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Purpose Multiplier (JSON)
+                </label>
+                <textarea 
+                  rows={4}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 font-mono text-sm bg-white" 
+                  placeholder={"{\n  \"academic\": 0.5,\n  \"commercial\": 2.0\n}"}
+                  value={pricingForm.purposeMultiplierJson} 
+                  onChange={e => setPricingForm({ ...pricingForm, purposeMultiplierJson: e.target.value })} 
+                />
+                <p className="text-xs text-gray-500 mt-1">Multiplier based on intent (e.g. {"{\"academic\": 0.5, \"commercial\": 2.0}"})</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bulk Purchase Discount (JSON)
+                </label>
+                <textarea 
+                  rows={4}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 font-mono text-sm bg-white" 
+                  placeholder={"{\n  \"10\": 0.9,\n  \"50\": 0.8\n}"}
+                  value={pricingForm.bulkDiscountJson} 
+                  onChange={e => setPricingForm({ ...pricingForm, bulkDiscountJson: e.target.value })} 
+                />
+                <p className="text-xs text-gray-500 mt-1">Fields volume discounting (e.g. {"{\"10\": 0.9, \"50\": 0.8}"} for 10% off &gt;10 fields)</p>
               </div>
               
               <div className="pt-4 flex justify-end gap-3 border-t">

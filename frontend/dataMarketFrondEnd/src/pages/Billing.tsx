@@ -20,18 +20,90 @@ export default function Billing({ user }: { user: any }) {
   const fetchBillingData = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/api/billing/summary?userId=${user?.id}&role=${viewMode}`);
+      const response = await api.get(`/api/billing/summary?userId=${user?.id}&role=${viewMode}&days=${timeRange}`);
       
       if (response.data) {
-        setStats({
-          ...response.data.stats,
-          monthlyTrend: [
-            { month: 'Jan', value: 0 },
-            { month: 'Feb', value: 0 },
-            { month: 'Mar', value: viewMode === 'consumer' ? response.data.stats.totalCost : response.data.stats.totalRevenue }
-          ]
+        const fetchedRecords: BillingRecord[] = response.data.records || [];
+        // --- 前端强制过滤日期以支持天数选择 ---
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - parseInt(timeRange));
+        
+        const filteredRecords = fetchedRecords.filter(r => {
+          const rDate = new Date((r.date || r.createdAt) as string);
+          return rDate >= cutoffDate;
         });
-        setRecords(response.data.records || []);
+
+        // 重新基于【过滤后的】数据动态计算统计结果
+        const calcQueries = filteredRecords.reduce((sum, r) => sum + (r.queryCount || 0), 0);
+        const calcRecords = filteredRecords.reduce((sum, r) => sum + (r.recordsAccessed || 0), 0);
+        const calcCost = filteredRecords.reduce((sum, r) => sum + (r.cost || 0), 0);
+        
+        let trend: { month: string; value: number }[] = [];
+
+        // 动态计算不同时间跨度的分组（按天、按周或按月）
+        const timeMap: Record<string, number> = {};
+        const orderedKeys: string[] = [];
+        const today = new Date();
+
+        if (timeRange === '7') {
+          // Last 7 days: Group by Day of the week
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const label = d.toLocaleString('en-US', { weekday: 'short' });
+            orderedKeys.push(label);
+            timeMap[label] = 0;
+          }
+          filteredRecords.forEach(r => {
+            const rDate = new Date((r.date || r.createdAt) as string);
+            const label = rDate.toLocaleString('en-US', { weekday: 'short' });
+            if (timeMap[label] !== undefined) timeMap[label] += Number(r.cost || 0);
+          });
+        } else if (timeRange === '30') {
+          // Last 30 days: Group by Week
+          for (let i = 3; i >= 0; i--) {
+            const label = `Week ${4 - i}`;
+            orderedKeys.push(label);
+            timeMap[label] = 0;
+          }
+          filteredRecords.forEach(r => {
+            const rDate = new Date((r.date || r.createdAt) as string);
+            const diffDays = Math.floor((today.getTime() - rDate.getTime()) / (1000 * 60 * 60 * 24));
+            let week = 4;
+            if (diffDays < 7) week = 4;
+            else if (diffDays < 14) week = 3;
+            else if (diffDays < 21) week = 2;
+            else week = 1;
+            
+            const label = `Week ${week}`;
+            if (timeMap[label] !== undefined) timeMap[label] += Number(r.cost || 0);
+          });
+        } else {
+          // Last 90 days: Group by Month
+          for (let i = 2; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const label = d.toLocaleString('en-US', { month: 'short' });
+            orderedKeys.push(label);
+            timeMap[label] = 0;
+          }
+          filteredRecords.forEach(r => {
+            const rDate = new Date((r.date || r.createdAt) as string);
+            const label = rDate.toLocaleString('en-US', { month: 'short' });
+            if (timeMap[label] !== undefined) timeMap[label] += Number(r.cost || 0);
+          });
+        }
+
+        trend = orderedKeys.map(k => ({ month: k, value: timeMap[k] }));
+
+        setStats({
+          totalQueries: calcQueries,
+          totalRecordsAccessed: calcRecords,
+          totalCost: viewMode === 'consumer' ? calcCost : 0,
+          totalRevenue: viewMode === 'owner' ? calcCost : 0,
+          monthlyTrend: trend
+        });
+        setRecords(filteredRecords);
       }
     } catch (error) {
       console.error('Failed to fetch billing data:', error);
@@ -42,7 +114,7 @@ export default function Billing({ user }: { user: any }) {
 
   useEffect(() => {
     fetchBillingData();
-  }, [viewMode]);
+  }, [viewMode, timeRange]);
 
   const maxTrendValue = Math.max(...stats.monthlyTrend.map(m => m.value), 1);
 
@@ -53,30 +125,7 @@ export default function Billing({ user }: { user: any }) {
           <h1 className="text-3xl font-bold text-gray-900">Billing Dashboard</h1>
           <p className="text-gray-600 mt-1">Track usage, costs, and revenue</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="bg-white rounded-lg border border-gray-300 p-1 flex">
-            <button
-              onClick={() => setViewMode('consumer')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'consumer'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Consumer View
-            </button>
-            <button
-              onClick={() => setViewMode('owner')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'owner'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Owner View
-            </button>
-          </div>
-        </div>
+        {/* Removed redundant view mode toggle since user roles are fixed */}
       </div>
 
       {viewMode === 'consumer' ? (
@@ -346,12 +395,12 @@ export default function Billing({ user }: { user: any }) {
               <h3 className="text-lg font-semibold text-gray-900">Top Performing Datasets</h3>
             </div>
             <div className="space-y-4">
-              {records.reduce((acc: any[], current) => {
+              {records.reduce((acc: { name: string; datasetId: string; queries: number; revenue: number; records: number }[], current) => {
                 const existing = acc.find(item => item.datasetId === current.datasetId);
                 if (existing) {
-                  existing.queries += current.queryCount;
-                  existing.revenue += current.cost;
-                  existing.records += current.recordsAccessed;
+                  existing.queries += current.queryCount || 0;
+                  existing.revenue += current.cost || 0;
+                  existing.records += current.recordsAccessed || 0;
                 } else {
                   acc.push({
                     name: current.datasetName || 'Unknown',

@@ -5,6 +5,16 @@ import { DataSet, ConsentRule } from '../types';
 import { Toast } from '../components/Toast';
 
 export default function ConsentManagement({ user }: { user: any }) {
+  if (user?.role !== 'owner') {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-gray-500">
+        <Shield className="w-16 h-16 text-gray-300 mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">No Content Available</h2>
+        <p>This page is reserved for Data Owners to manage their consent rules.</p>
+      </div>
+    );
+  }
+
   const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRevokeModal, setShowRevokeModal] = useState<string | null>(null);

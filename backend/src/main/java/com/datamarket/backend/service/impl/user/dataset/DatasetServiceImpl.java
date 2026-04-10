@@ -5,11 +5,9 @@ import com.datamarket.backend.mapper.DatasetMapper;
 import com.datamarket.backend.mapper.UserMapper;
 import com.datamarket.backend.pojo.Dataset;
 import com.datamarket.backend.pojo.User;
-import com.datamarket.backend.service.impl.utils.UserDetailsImpl;
 import com.datamarket.backend.service.user.dataset.DatasetService;
+import com.datamarket.backend.utils.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,16 +23,16 @@ public class DatasetServiceImpl implements DatasetService {
     @Autowired
     private UserMapper userMapper;
 
-    private User getCurrentUser() {
-        UsernamePasswordAuthenticationToken authenticationToken =
-                (UsernamePasswordAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl loginUser = (UserDetailsImpl) authenticationToken.getPrincipal();
-        return loginUser.getUser();
-    }
+//    private User getCurrentUser() {
+//        UsernamePasswordAuthenticationToken authenticationToken =
+//                (UsernamePasswordAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+//        UserDetailsImpl loginUser = (UserDetailsImpl) authenticationToken.getPrincipal();
+//        return loginUser.getUser();
+//    }
 
     @Override
     public Dataset addDataset(Dataset dataset) {
-        User user = getCurrentUser();
+        User user = SecurityUtil.getCurrentUser();
 
         if (dataset.getFieldsSchema() != null) {
             List<String> fieldNames = dataset.getFieldsSchema().stream()
@@ -52,7 +50,7 @@ public class DatasetServiceImpl implements DatasetService {
 
     @Override
     public List<Dataset> getDatasetList() {
-        User user = getCurrentUser();
+        User user = SecurityUtil.getCurrentUser();
         QueryWrapper<Dataset> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("owner_id", user.getId()); // 只查自己的
         return datasetMapper.selectList(queryWrapper);
