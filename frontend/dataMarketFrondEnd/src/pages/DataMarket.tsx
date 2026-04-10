@@ -317,33 +317,66 @@ export default function DataMarket({ user }: { user: any }) {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Requested Fields</label>
-                <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3">
-                  {selectedDataset.fields.map(field => (
-                    <label key={field} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                      <input
-                        type="checkbox"
-                        checked={requestForm.requestedFields.includes(field)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setRequestForm({
-                              ...requestForm,
-                              requestedFields: [...requestForm.requestedFields, field]
-                            });
-                          } else {
-                            setRequestForm({
-                              ...requestForm,
-                              requestedFields: requestForm.requestedFields.filter(f => f !== field)
-                            });
-                          }
-                        }}
-                        className="w-4 h-4 text-blue-600 rounded"
-                      />
-                      <span className="text-sm text-gray-700 font-mono">{field}</span>
-                    </label>
-                  ))}
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center justify-between">
+                  <span>Requested Fields</span>
+                  <span className="text-xs text-gray-500 font-normal">Select fields you need access to</span>
+                </label>
+                <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-white">
+                  {selectedDataset.fields.map(field => {
+                    const schemaItem = selectedDataset.fieldsSchema?.find((s: any) => s.name === field);
+                    const isSensitive = schemaItem?.sensitive === true;
+                    const fieldType = schemaItem?.type || 'unknown';
+
+                    return (
+                      <label key={field} className={`flex items-start gap-3 cursor-pointer p-2.5 rounded-lg border border-transparent transition-all ${
+                        requestForm.requestedFields.includes(field) 
+                          ? (isSensitive ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200') 
+                          : 'hover:bg-gray-50 border-gray-100'
+                      }`}>
+                        <div className="mt-0.5">
+                          <input
+                            type="checkbox"
+                            checked={requestForm.requestedFields.includes(field)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setRequestForm({
+                                  ...requestForm,
+                                  requestedFields: [...requestForm.requestedFields, field]
+                                });
+                              } else {
+                                setRequestForm({
+                                  ...requestForm,
+                                  requestedFields: requestForm.requestedFields.filter(f => f !== field)
+                                });
+                              }
+                            }}
+                            className={`w-4 h-4 rounded mt-0.5 ${isSensitive ? 'text-red-600 focus:ring-red-500' : 'text-blue-600 focus:ring-blue-500'}`}
+                          />
+                        </div>
+                        <div className="flex-1 flex flex-col gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-gray-900 font-mono">{field}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded drop-shadow-sm border border-gray-200">
+                              {fieldType}
+                            </span>
+                            {isSensitive && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-700 font-semibold rounded drop-shadow-sm border border-red-200 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />
+                                Sensitive
+                              </span>
+                            )}
+                          </div>
+                          {schemaItem?.description && (
+                            <span className="text-xs text-gray-500 leading-relaxed max-w-[90%]">
+                              {schemaItem.description}
+                            </span>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 mt-2 font-medium">
                   {requestForm.requestedFields.length} of {selectedDataset.fields.length} fields selected
                 </p>
               </div>
