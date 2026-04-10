@@ -25,6 +25,7 @@ export default function ConsentManagement({ user }: { user: any }) {
     allowedRoles: [] as string[],
     allowedPurposes: [] as string[],
     allowedFields: [] as string[],
+    deniedFields: [] as string[],
     validUntil: ''
   });
   const [toast, setToast] = useState<{show: boolean, message: string, type: 'success' | 'error' | 'warning' | 'info'}>({ show: false, message: '', type: 'info' });
@@ -56,7 +57,8 @@ export default function ConsentManagement({ user }: { user: any }) {
           ...rule,
           allowedRoles: safeParse(rule.allowedRoles),
           allowedPurposes: safeParse(rule.allowedPurposes),
-          allowedFields: safeParse(rule.allowedFields)
+          allowedFields: safeParse(rule.allowedFields),
+          deniedFields: safeParse(rule.deniedFields || rule.denied_fields)
         };
       });
 
@@ -126,6 +128,7 @@ export default function ConsentManagement({ user }: { user: any }) {
       allowedRoles: formData.allowedRoles,
       allowedPurposes: formData.allowedPurposes,
       allowedFields: formData.allowedFields,
+      deniedFields: formData.deniedFields,
       validFrom: new Date().toISOString().split('T')[0],
       validUntil: formData.validUntil ? formData.validUntil : '2099-12-31',
       status: 'active'
@@ -141,6 +144,7 @@ export default function ConsentManagement({ user }: { user: any }) {
         allowedRoles: [],
         allowedPurposes: [],
         allowedFields: [],
+        deniedFields: [],
         validUntil: ''
       });
 
@@ -335,6 +339,22 @@ export default function ConsentManagement({ user }: { user: any }) {
                               </div>
                             </div>
 
+                            {rule.deniedFields && rule.deniedFields.length > 0 && (
+                            <div>
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mb-1">
+                                <FileText className="w-3 h-3 transform rotate-180" />
+                                Denied Fields
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {(rule.deniedFields || []).filter(Boolean).map((field, idx) => (
+                                  <span key={`denied-field-${idx}`} className="bg-red-50 text-red-700 border border-red-100 text-xs px-2 py-1 rounded">
+                                    {String(field).replace(/["[\]\\]/g, '')}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            )}
+
                             <div>
                               <p className="text-xs text-gray-500 flex items-center gap-1 mb-1">
                                 <Calendar className="w-3 h-3" />
@@ -475,9 +495,30 @@ export default function ConsentManagement({ user }: { user: any }) {
                         onChange={() => toggleArrayItem(
                           formData.allowedFields,
                           field,
-                          (arr) => setFormData({ ...formData, allowedFields: arr })
+                          (arr) => setFormData({ ...formData, allowedFields: arr, deniedFields: formData.deniedFields.filter(f => f !== field) })
                         )}
                         className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <span className="text-sm text-gray-700 font-mono">{field}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Denied Fields (Optional)</label>
+                <div className="space-y-2">
+                  {dataset.fields.map(field => (
+                    <label key={`denied-${field}`} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.deniedFields.includes(field)}
+                        onChange={() => toggleArrayItem(
+                          formData.deniedFields,
+                          field,
+                          (arr) => setFormData({ ...formData, deniedFields: arr, allowedFields: formData.allowedFields.filter(f => f !== field) })
+                        )}
+                        className="w-4 h-4 text-red-600 rounded"
                       />
                       <span className="text-sm text-gray-700 font-mono">{field}</span>
                     </label>

@@ -81,8 +81,9 @@ public class PricingEngine {
         BigDecimal bulkDiscount = calculateBulkDiscount(historyCount, config.getBulkDiscountJson());
 
         // 7. 大公式计算
-        // 字段金额 = (普通字段费 + 敏感字段费) * 批量数量折扣
-        BigDecimal fieldsTotal = normalCost.add(sensitiveCost).multiply(bulkDiscount);
+        // 字段金额 = (普通字段费 + 敏感字段费) * (1 - 批量折扣)
+        BigDecimal discountFactor = BigDecimal.ONE.subtract(bulkDiscount);
+        BigDecimal fieldsTotal = normalCost.add(sensitiveCost).multiply(discountFactor);
         
         // 总金额 = (基础访问费 + 折扣后的字段金额) * 取数用途倍率
         BigDecimal total = baseCost.add(fieldsTotal).multiply(purposeMultiplier);
@@ -92,9 +93,9 @@ public class PricingEngine {
     }
 
     private BigDecimal calculateBulkDiscount(int count, Map<?, ?> tiers) {
-        if (tiers == null || tiers.isEmpty()) return BigDecimal.ONE;
+        if (tiers == null || tiers.isEmpty()) return BigDecimal.ZERO;
         
-        BigDecimal bestDiscount = BigDecimal.ONE;
+        BigDecimal bestDiscount = BigDecimal.ZERO;
         int highestTier = 0;
         
         for (Map.Entry<?, ?> entry : tiers.entrySet()) {

@@ -77,7 +77,9 @@ export default function DatasetManagement({ user }: { user: any }) {
         description: dataset.description,
         category: dataset.category,
         recordCount: dataset.recordCount,
-        fieldsSchemaStr: dataset.fieldsSchema?.map(f => f.name).join(', ') || ''
+        fieldsSchemaStr: dataset.fieldsSchema 
+          ? JSON.stringify(dataset.fieldsSchema, null, 2) 
+          : dataset.fields?.join(', ') || ''
       });
     } else {
       setEditingDataset(null);
@@ -164,13 +166,30 @@ export default function DatasetManagement({ user }: { user: any }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const fieldsSchema = formData.fieldsSchemaStr.split(',').map(s => ({ name: s.trim() })).filter(f => f.name);
+    
+    let fieldsSchema;
+    let fields;
+    
+    try {
+      const inputStr = formData.fieldsSchemaStr.trim();
+      if (inputStr.startsWith('[')) {
+        fieldsSchema = JSON.parse(inputStr);
+        fields = fieldsSchema.map((f: any) => f.name);
+      } else {
+        fieldsSchema = inputStr.split(',').map(s => ({ name: s.trim() })).filter(f => f.name);
+        fields = fieldsSchema.map((f: any) => f.name);
+      }
+    } catch (err) {
+      setToast({ show: true, message: 'Invalid JSON format in Fields Schema', type: 'error' });
+      return;
+    }
 
     const payload = {
       name: formData.name,
       description: formData.description,
       category: formData.category,
       recordCount: Number(formData.recordCount),
+      fields,
       fieldsSchema
     };
 
@@ -357,9 +376,16 @@ export default function DatasetManagement({ user }: { user: any }) {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fields / Schema (comma separated)</label>
-                <input required type="text" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" value={formData.fieldsSchemaStr} onChange={e => setFormData({ ...formData, fieldsSchemaStr: e.target.value })} placeholder="e.g. id, name, age, city" />
-                <p className="text-xs text-gray-500 mt-1">Specify column names available in this dataset</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fields Schema (Comma separated OR Full JSON Array)</label>
+                <textarea 
+                  required 
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm" 
+                  rows={6}
+                  value={formData.fieldsSchemaStr} 
+                  onChange={e => setFormData({ ...formData, fieldsSchemaStr: e.target.value })} 
+                  placeholder={`id, name, age\n\nOR use JSON:\n[\n  { "name": "age", "sensitive": false },\n  { "name": "genotype", "sensitive": true }\n]`} 
+                />
+                <p className="text-xs text-gray-500 mt-1">Provide a JSON array describing each field and its sensitivity, or simply a comma-separated list of field names.</p>
               </div>
               
               <div className="pt-4 flex justify-end gap-3 border-t">

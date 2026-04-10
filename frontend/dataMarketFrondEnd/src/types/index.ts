@@ -15,6 +15,7 @@ export interface ConsentRule {
   allowedRoles: string[];
   allowedPurposes: string[];
   allowedFields: string[];
+  deniedFields?: string[];
   validFrom: string;
   validUntil: string;
   status: 'active' | 'revoked' | 'expired';
