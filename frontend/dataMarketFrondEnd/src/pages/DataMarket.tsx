@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Database, FileText, Send, X, CheckCircle2, AlertCircle, Clock, Filter, User, Hash } from 'lucide-react';
+import { Search, Database, Send, X, CheckCircle2, AlertCircle, Clock, Filter, User, Hash } from 'lucide-react';
 import { DataSet } from '../types';
 import api from '../services/api';
 import { Toast } from '../components/Toast';
@@ -323,7 +323,7 @@ export default function DataMarket({ user }: { user: any }) {
                 </label>
                 <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-white">
                   {selectedDataset.fields.map(field => {
-                    const schemaItem = selectedDataset.fieldsSchema?.find((s: any) => s.name === field);
+                    const schemaItem = (selectedDataset as any).fieldsSchema?.find((s: any) => s.name === field);
                     const isSensitive = schemaItem?.sensitive === true;
                     const fieldType = schemaItem?.type || 'unknown';
 
