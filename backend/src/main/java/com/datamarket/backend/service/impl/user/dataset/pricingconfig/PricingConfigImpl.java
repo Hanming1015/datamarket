@@ -12,6 +12,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Configuration class for PricingImpl.
+ */
+
 
 @Service
 public class PricingConfigImpl implements PricingConfigService {

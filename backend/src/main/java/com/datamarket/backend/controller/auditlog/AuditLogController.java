@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * REST controller for managing AuditLog related endpoints and operations.
+ */
+
 @RestController
 public class AuditLogController {
 

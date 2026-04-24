@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Represents the AuditLog entity.
+ */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

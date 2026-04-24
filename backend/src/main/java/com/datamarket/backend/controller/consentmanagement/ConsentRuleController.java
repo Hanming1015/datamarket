@@ -8,6 +8,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * REST controller for managing ConsentRule related endpoints and operations.
+ */
+
 @RestController
 @RequestMapping("/api/consents")
 public class ConsentRuleController {

@@ -8,13 +8,16 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
 
+/**
+ * Utility class providing helper methods for Jwt.
+ */
+
 @Component
 public class JwtUtil {
-    public static final long JWT_TTL = 60 * 60 * 1000L * 24 * 14;  // 有效期14天
+    public static final long JWT_TTL = 60 * 60 * 1000L * 24 * 14;  // 14 days expiration
     public static final String JWT_KEY = "SDFGjhdsfalshdfHFdsjkdsfds121232131afasdfac";
 
     public static String getUUID() {

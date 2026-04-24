@@ -5,6 +5,10 @@ import com.datamarket.backend.pojo.Dataset;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Service interface for managing Dataset operations.
+ */
+
 public interface DatasetService {
     Dataset addDataset(Dataset dataset);
 

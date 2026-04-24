@@ -4,15 +4,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * Configuration class for Cors.
+ */
+
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // 允许跨域访问的路径：所有路径
-                .allowedOriginPatterns("*") // 允许访问的源：所有源 (Spring Boot 2.4+ 推荐写法)
-                .allowedMethods("GET", "POST", "PUT", "OPTIONS", "DELETE", "PATCH") // 允许的请求方法
-                .allowCredentials(true) // 是否允许发送 Cookie/Token
-                .allowedHeaders("*") // 允许的 Header
-                .maxAge(3600); // 预检间隔时间 (秒)
+        registry.addMapping("/**") // Paths allowed for cross-origin access: all paths
+                .allowedOriginPatterns("*") // Origins allowed for access: all origins (recommended syntax for Spring Boot 2.4+)
+                .allowedMethods("GET", "POST", "PUT", "OPTIONS", "DELETE", "PATCH") // Allowed request methods
+                .allowCredentials(true) // Whether to allow sending Cookies/Tokens
+                .allowedHeaders("*") // Allowed Headers
+                .maxAge(3600); // Preflight request cache duration (seconds)
     }
 }

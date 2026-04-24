@@ -10,6 +10,10 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Implementation of the InfoService interface.
+ */
+
 @Service
 public class InfoServiceImpl implements InfoService {
 

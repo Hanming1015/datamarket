@@ -8,6 +8,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * REST controller for managing AccessRequest related endpoints and operations.
+ */
+
 @RestController
 @RequestMapping("/api/access")
 public class AccessRequestController {

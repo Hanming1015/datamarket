@@ -20,6 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Implementation of the ConsentRuleService interface.
+ */
+
 @Service
 public class ConsentRuleServiceImpl implements ConsentRuleService {
 

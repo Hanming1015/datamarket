@@ -6,6 +6,10 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+/**
+ * Data Transfer Object representing PricingResult.
+ */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -6,6 +6,10 @@ import com.datamarket.backend.pojo.AccessRequest;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Service interface for managing AccessRequest operations.
+ */
+
 public interface AccessRequestService {
     Map<String, Object> processAccessRequest(DataAccessRequest request);
     

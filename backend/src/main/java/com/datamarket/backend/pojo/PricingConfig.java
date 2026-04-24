@@ -14,6 +14,10 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Configuration class for Pricing.
+ */
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

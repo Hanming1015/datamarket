@@ -15,7 +15,7 @@ export default function DataMarket({ user }: { user: any }) {
     requestedFields: [] as string[],
     duration: '6'
   });
-  const [toast, setToast] = useState<{show: boolean, message: string, type: 'success' | 'error' | 'warning' | 'info'}>({ show: false, message: '', type: 'info' });
+  const [toast, setToast] = useState<{ show: boolean, message: string, type: 'success' | 'error' | 'warning' | 'info' }>({ show: false, message: '', type: 'info' });
 
   const categories = ['all', 'health', 'fitness', 'genomic', 'lifestyle'];
   const purposes = ['Medical Research', 'Clinical Trials', 'Drug Development', 'Sleep Research', 'Genetic Research', 'AI Model Training'];
@@ -26,24 +26,23 @@ export default function DataMarket({ user }: { user: any }) {
         const params: any = {};
         if (selectedCategory !== 'all') params.category = selectedCategory;
         if (searchQuery) params.keyword = searchQuery;
-        
-        // 获取市场上的所有数据集（不再限制 owner）
+
         const response = await api.get('/api/datasets/all', { params });
         //console.log("Fetched datasets from backend:", response.data);
-        
+
         // Since backend currently doesn't implement query wrappers for these params,
         // we filter the results safely on the frontend for now:
         let filteredData = response.data || [];
         if (selectedCategory !== 'all') {
-            filteredData = filteredData.filter((ds: any) => ds.category?.toLowerCase() === selectedCategory.toLowerCase());
+          filteredData = filteredData.filter((ds: any) => ds.category?.toLowerCase() === selectedCategory.toLowerCase());
         }
         if (searchQuery) {
-            filteredData = filteredData.filter((ds: any) => 
-                ds.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                ds.description?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
+          filteredData = filteredData.filter((ds: any) =>
+            ds.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            ds.description?.toLowerCase().includes(searchQuery.toLowerCase())
+          );
         }
-        
+
         setDatasets(filteredData);
       } catch (error) {
         console.error("Failed to fetch datasets", error);
@@ -74,7 +73,7 @@ export default function DataMarket({ user }: { user: any }) {
 
   const handleRequestAccess = async () => {
     if (!selectedDataset) return;
-    
+
     try {
       const payload = {
         requesterId: user?.id,
@@ -87,23 +86,23 @@ export default function DataMarket({ user }: { user: any }) {
       };
 
       const response = await api.post("/api/access/request", payload);
-      
+
       console.log("Server Response:", response.data);
-      
+
       if (response.data.status === "rejected") {
         const errorReason = response.data.decision?.reasons?.[Object.keys(response.data.decision.reasons)[0]] || "Insufficient permissions";
         setToast({ show: true, message: `Access Request Rejected\nReason: ${errorReason}`, type: 'error' });
       } else {
-        setToast({ 
-          show: true, 
-          message: `Request Successful (${response.data.status})!\nTotal Cost: $${response.data.pricing?.totalCost}`, 
-          type: 'success' 
+        setToast({
+          show: true,
+          message: `Request Successful (${response.data.status})!\nTotal Cost: $${response.data.pricing?.totalCost}`,
+          type: 'success'
         });
       }
 
       setShowRequestModal(false);
       setRequestForm({ purpose: '', requestedFields: [], duration: '6' });
-      
+
     } catch (error) {
       console.error("Request failed", error);
       setToast({ show: true, message: "Submission failed. Please check if the server is running.", type: 'error' });
@@ -113,10 +112,10 @@ export default function DataMarket({ user }: { user: any }) {
   return (
     <div className="space-y-6">
       {toast.show && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast({ ...toast, show: false })} 
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
         />
       )}
       <div className="flex items-center justify-between">
@@ -150,11 +149,10 @@ export default function DataMarket({ user }: { user: any }) {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedCategory === cat
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedCategory === cat
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </button>
@@ -242,12 +240,11 @@ export default function DataMarket({ user }: { user: any }) {
                   </div>
                   <p className="text-xs text-gray-600 mb-2">Purpose: {request.purpose}</p>
                   <div className="flex items-center justify-between">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      request.status === 'approved' ? 'bg-green-100 text-green-700' :
-                      request.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                      request.status === 'partial' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${request.status === 'approved' ? 'bg-green-100 text-green-700' :
+                        request.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          request.status === 'partial' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-700'
+                      }`}>
                       {request.status}
                     </span>
                     <span className="text-xs text-gray-500">
@@ -328,11 +325,10 @@ export default function DataMarket({ user }: { user: any }) {
                     const fieldType = schemaItem?.type || 'unknown';
 
                     return (
-                      <label key={field} className={`flex items-start gap-3 cursor-pointer p-2.5 rounded-lg border border-transparent transition-all ${
-                        requestForm.requestedFields.includes(field) 
-                          ? (isSensitive ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200') 
+                      <label key={field} className={`flex items-start gap-3 cursor-pointer p-2.5 rounded-lg border border-transparent transition-all ${requestForm.requestedFields.includes(field)
+                          ? (isSensitive ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200')
                           : 'hover:bg-gray-50 border-gray-100'
-                      }`}>
+                        }`}>
                         <div className="mt-0.5">
                           <input
                             type="checkbox"

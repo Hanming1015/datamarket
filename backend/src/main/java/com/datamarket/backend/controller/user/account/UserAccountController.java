@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * REST controller for managing UserAccount related endpoints and operations.
+ */
+
 @RestController
 @RequestMapping("/api/user/account")
 public class UserAccountController {

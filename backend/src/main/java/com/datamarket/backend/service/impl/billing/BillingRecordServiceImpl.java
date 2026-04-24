@@ -17,6 +17,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of the BillingRecordService interface.
+ */
+
 @Service
 public class BillingRecordServiceImpl implements BillingRecordService {
 
@@ -69,7 +73,7 @@ public class BillingRecordServiceImpl implements BillingRecordService {
         bill.setDatasetName(ar.getDatasetName());
         bill.setAccessRequestId(ar.getId());
 
-        // 金额明细
+        // Detailed costs
         bill.setBaseCost(pricing.getBaseCost());
         bill.setFieldCost(pricing.getFieldCost());
         bill.setSensitiveFieldCost(pricing.getSensitiveFieldCost());
@@ -77,11 +81,11 @@ public class BillingRecordServiceImpl implements BillingRecordService {
         bill.setBulkDiscount(pricing.getBulkDiscount());
         bill.setCost(pricing.getTotalCost());
 
-        // 日期相关字段
+        // Date related fields
         bill.setDate(LocalDate.now());
         bill.setCreatedAt(LocalDateTime.now());
 
-        // 存入数据库
+        // Save to database
         billingRecordMapper.insert(bill);
 
         return bill;

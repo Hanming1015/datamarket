@@ -11,6 +11,10 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
+/**
+ * Implementation of the RegisterService interface.
+ */
+
 @Service
 public class RegisterServiceImpl implements RegisterService {
 

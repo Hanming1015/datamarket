@@ -6,7 +6,7 @@ import { UsageStats, BillingRecord } from '../types';
 export default function Billing({ user }: { user: any }) {
   const [viewMode, setViewMode] = useState<'consumer' | 'owner'>(user?.role || 'consumer');
   const [timeRange, setTimeRange] = useState('30');
-  
+
   const [stats, setStats] = useState<UsageStats>({
     totalQueries: 0,
     totalRecordsAccessed: 0,
@@ -21,26 +21,24 @@ export default function Billing({ user }: { user: any }) {
     setLoading(true);
     try {
       const response = await api.get(`/api/billing/summary?userId=${user?.id}&role=${viewMode}&days=${timeRange}`);
-      
+
       if (response.data) {
         const fetchedRecords: BillingRecord[] = response.data.records || [];
-        // --- 前端强制过滤日期以支持天数选择 ---
+
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - parseInt(timeRange));
-        
+
         const filteredRecords = fetchedRecords.filter(r => {
           const rDate = new Date((r.date || r.createdAt) as string);
           return rDate >= cutoffDate;
         });
 
-        // 重新基于【过滤后的】数据动态计算统计结果
         const calcQueries = filteredRecords.reduce((sum, r) => sum + (r.queryCount || 0), 0);
         const calcRecords = filteredRecords.reduce((sum, r) => sum + (r.recordsAccessed || 0), 0);
         const calcCost = filteredRecords.reduce((sum, r) => sum + (r.cost || 0), 0);
-        
+
         let trend: { month: string; value: number }[] = [];
 
-        // 动态计算不同时间跨度的分组（按天、按周或按月）
         const timeMap: Record<string, number> = {};
         const orderedKeys: string[] = [];
         const today = new Date();
@@ -74,7 +72,7 @@ export default function Billing({ user }: { user: any }) {
             else if (diffDays < 14) week = 3;
             else if (diffDays < 21) week = 2;
             else week = 1;
-            
+
             const label = `Week ${week}`;
             if (timeMap[label] !== undefined) timeMap[label] += Number(r.cost || 0);
           });
@@ -324,8 +322,8 @@ export default function Billing({ user }: { user: any }) {
                 <DollarSign className="w-5 h-5 text-gray-400" />
               </div>
               <p className="text-3xl font-bold text-gray-900 mb-1">
-                ${new Set(records.map(r => r.datasetId)).size > 0 
-                  ? (stats.totalRevenue / new Set(records.map(r => r.datasetId)).size).toFixed(2) 
+                ${new Set(records.map(r => r.datasetId)).size > 0
+                  ? (stats.totalRevenue / new Set(records.map(r => r.datasetId)).size).toFixed(2)
                   : '0.00'}
               </p>
               <p className="text-gray-500 text-xs">Per dataset average</p>

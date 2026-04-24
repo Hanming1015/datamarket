@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Implementation of the AuditLogService interface.
+ */
+
 @Service
 public class AuditLogServiceImpl implements AuditLogService {
 

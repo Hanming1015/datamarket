@@ -14,6 +14,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Represents the ConsentRule entity.
+ */
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

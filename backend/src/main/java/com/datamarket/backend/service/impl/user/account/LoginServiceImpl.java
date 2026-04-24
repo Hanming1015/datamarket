@@ -13,6 +13,10 @@ import org.springframework.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Implementation of the LoginService interface.
+ */
+
 @Service
 public class LoginServiceImpl implements LoginService {
 

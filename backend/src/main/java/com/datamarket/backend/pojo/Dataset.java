@@ -11,6 +11,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents the Dataset entity.
+ */
+
 @Data
 @TableName(value = "datasets", autoResultMap = true)
 public class Dataset {

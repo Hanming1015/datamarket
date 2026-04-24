@@ -10,6 +10,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Represents the User entity.
+ */
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

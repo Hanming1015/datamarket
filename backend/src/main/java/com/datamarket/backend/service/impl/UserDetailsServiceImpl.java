@@ -9,6 +9,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+/**
+ * Implementation of the UserDetailsService interface.
+ */
+
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {

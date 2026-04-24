@@ -5,6 +5,10 @@ import com.datamarket.backend.service.impl.utils.UserDetailsImpl;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+/**
+ * Utility class providing helper methods for Security.
+ */
+
 public class SecurityUtil {
 
     private SecurityUtil() {

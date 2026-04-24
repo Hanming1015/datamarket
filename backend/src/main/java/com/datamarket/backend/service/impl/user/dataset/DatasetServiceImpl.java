@@ -14,6 +14,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of the DatasetService interface.
+ */
+
 @Service
 public class DatasetServiceImpl implements DatasetService {
 
@@ -52,7 +56,7 @@ public class DatasetServiceImpl implements DatasetService {
     public List<Dataset> getDatasetList() {
         User user = SecurityUtil.getCurrentUser();
         QueryWrapper<Dataset> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("owner_id", user.getId()); // 只查自己的
+        queryWrapper.eq("owner_id", user.getId()); // only query own datasets
         return datasetMapper.selectList(queryWrapper);
     }
 

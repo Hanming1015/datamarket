@@ -26,6 +26,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Implementation of the AccessRequestService interface.
+ */
+
 @Service
 public class AccessRequestServiceImpl implements AccessRequestService {
 
@@ -71,12 +75,12 @@ public class AccessRequestServiceImpl implements AccessRequestService {
         String datasetName = (dataset != null) ? dataset.getName() : "Unknown Dataset";
         List<Map<String, Object>> fieldsSchema = (dataset != null) ? dataset.getFieldsSchema() : new ArrayList<>();
 
-        // 1. 匹配引擎判决
+        // 1. Matching engine decision
         MatchResult match = matchingEngine.match(request);
 
         User user = SecurityUtil.getCurrentUser();
 
-        // 2. 组装要存库的 POJO
+        // 2. Assemble POJO for persistence
         AccessRequest ar = new AccessRequest();
         ar.setId(UUID.randomUUID().toString());
         ar.setDatasetId(request.getDatasetId());
@@ -91,9 +95,9 @@ public class AccessRequestServiceImpl implements AccessRequestService {
         Map<String, Object> response = new LinkedHashMap<>();
         PricingResult pricing = null;
 
-        // 3. 根据判决结果走分支
+        // 3. Process branch based on decision
         if ("rejected".equals(match.getDecision())) {
-            // 分支 A：被拉黑彻底拒绝
+            // Branch A: Completely rejected
             ar.setStatus("rejected");
             ar.setRespondedAt(LocalDateTime.now());
             ar.setCost(BigDecimal.ZERO);
@@ -102,30 +106,30 @@ public class AccessRequestServiceImpl implements AccessRequestService {
 
             auditLogService.addAuditLog(user.getId(), user.getUsername(), "request_rejected", request.getDatasetId(), datasetName,"Rejected: " + match.getDenyReason());
         } else {
-            // 分支 B：完全通过 / 部分通过
-            ar.setStatus(match.getDecision()); // 将被设为 "approved" 或 "partial"
+            // Branch B: Approved or Partial approval
+            ar.setStatus(match.getDecision()); // Will be set to "approved" or "partial"
             ar.setAllowedFields(match.getAllowedFields());
             ar.setDeniedFields(match.getDeniedFields());
             ar.setDenialReasons(match.getReasons());
             ar.setRespondedAt(LocalDateTime.now());
 
-            // --- 核心第二步：定价引擎算钱 ---
+            // --- Core Step 2: Pricing engine calculation ---
             pricing = pricingEngine.calculate(match.getAllowedFields(), fieldsSchema, request.getPurpose(), request.getRequesterId(), request.getDatasetId());
             ar.setCost(pricing.getTotalCost());
 
-            // 存访问记录表
+            // Save access record
             accessRequestMapper.insert(ar);
 
-            // 生成账单记录
+            // Generate billing record
             billingRecordService.createBillForAccess(ar, pricing, request);
 
-            // 存审计日志
+            // Save audit log
             auditLogService.addAuditLog(user.getId(), user.getUsername(), "data_accessed", request.getDatasetId(), datasetName,
                     "Fields allowed: " + match.getAllowedFields().size() + " | Cost: $" + pricing.getTotalCost());
         }
 
         // ==========================================
-        // 4. 重头戏：组装不用写 VO 的纯手工豪华 JSON
+        // 4. Main Event: Manually assemble JSON response
         // ==========================================
         response.put("id", ar.getId());
         response.put("datasetId", ar.getDatasetId());
@@ -139,13 +143,13 @@ public class AccessRequestServiceImpl implements AccessRequestService {
         response.put("respondedAt", ar.getRespondedAt().toString());
 
         if (pricing != null) {
-            // 在返回值里塞一个字典专门讲匹配原因
+            // Add a dictionary for matching reasons in the response
             response.put("decision", Map.of(
                     "allowedFields", match.getAllowedFields(),
                     "deniedFields", match.getDeniedFields(),
                     "reasons", match.getReasons()
             ));
-            // 在返回值里塞一个字典专门讲价格明细
+            // Add a dictionary for pricing details in the response
             response.put("pricing", Map.of(
                     "baseCost", pricing.getBaseCost(),
                     "fieldCost", pricing.getFieldCost(),

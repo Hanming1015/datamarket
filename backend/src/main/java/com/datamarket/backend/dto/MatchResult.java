@@ -6,6 +6,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Data Transfer Object representing MatchResult.
+ */
+
 @Data
 public class MatchResult {
     private String decision;  // "approved" | "partial" | "rejected"
@@ -15,7 +19,7 @@ public class MatchResult {
     private LocalDate consentExpiresAt;
     private String denyReason;
 
-    // 静态工厂方法（完全通过）
+    // Static factory method (fully approved)
     public static MatchResult permit(List<String> allowed, LocalDate expiry) {
         MatchResult r = new MatchResult();
         r.decision = "approved";
@@ -26,7 +30,7 @@ public class MatchResult {
         return r;
     }
 
-    // 静态工厂方法（部分通过）
+    // Static factory method (partial approval)
     public static MatchResult partial(List<String> allowed, List<String> denied,
                                       Map<String, String> reasons, LocalDate expiry) {
         MatchResult r = new MatchResult();
@@ -38,7 +42,7 @@ public class MatchResult {
         return r;
     }
 
-    // 静态工厂方法（彻底拒绝）
+    // Static factory method (completely rejected)
     public static MatchResult deny(String reason) {
         MatchResult r = new MatchResult();
         r.decision = "rejected";
